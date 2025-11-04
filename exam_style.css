@@ -1,0 +1,1034 @@
+/* DBMLA 試験問題 - スタイルシート（改善版） */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.container {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+h1 {
+    font-size: 2em;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    font-size: 1em;
+    opacity: 0.9;
+}
+
+.controls {
+    padding: 15px 30px;
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.filter-group {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #495057;
+}
+
+select, button {
+    padding: 8px 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+select {
+    background: white;
+    min-width: 120px;
+}
+
+select[multiple] {
+    height: auto;
+    min-height: 38px;
+    overflow: hidden;
+}
+
+select[multiple]:focus {
+    height: auto;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+select[multiple] option:checked {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+select:hover {
+    border-color: #667eea;
+}
+
+button {
+    background: #667eea;
+    color: white;
+    border: none;
+    font-weight: 600;
+}
+
+button:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.stats {
+    margin-left: auto;
+    display: flex;
+    gap: 20px;
+}
+
+.stat-item {
+    background: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: 2px solid #dee2e6;
+}
+
+.stat-label {
+    color: #6c757d;
+    font-size: 0.85em;
+    margin-right: 5px;
+}
+
+.stat-value {
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+/* ツールメニュー */
+.tools-menu-container {
+    position: relative;
+}
+
+.tools-btn {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1em;
+    transition: all 0.3s;
+}
+
+.tools-btn:hover {
+    background: #5568d3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.tools-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    min-width: 250px;
+    z-index: 1000;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.tools-dropdown.show {
+    max-height: 500px;
+    opacity: 1;
+}
+
+.tools-dropdown button {
+    display: block;
+    width: 100%;
+    padding: 15px 20px;
+    background: white;
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    text-align: left;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: 600;
+    color: #495057;
+    transition: all 0.2s;
+}
+
+.tools-dropdown button:last-child {
+    border-bottom: none;
+}
+
+.tools-dropdown button:hover {
+    background: #f8f9fa;
+    color: #667eea;
+    padding-left: 25px;
+}
+
+/* 問題一覧トグルボタン（ハンバーガーメニュー） */
+.toggle-list-btn {
+    display: none;
+    background: #667eea;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+}
+
+.toggle-list-btn:hover {
+    background: #5568d3;
+}
+
+.hamburger-icon {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 24px;
+    height: 18px;
+}
+
+.hamburger-icon span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+
+/* メインコンテンツエリア */
+.main-content {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 左側：問題リスト */
+.questions-list {
+    width: 380px;
+    background: white;
+    border-right: 2px solid #e9ecef;
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+/* 折りたたみ可能なセクション */
+.collapsible-section {
+    border-bottom: 2px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 各セクションのヘッダーを固定 */
+.collapsible-section:nth-child(1) .section-toggle-btn {
+    position: sticky;
+    top: 0;
+    z-index: 13;
+    flex-shrink: 0;
+}
+
+.collapsible-section:nth-child(2) .section-toggle-btn {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    flex-shrink: 0;
+}
+
+.collapsible-section:nth-child(3) .section-toggle-btn {
+    position: sticky;
+    top: 0;
+    z-index: 11;
+    flex-shrink: 0;
+}
+
+.section-toggle-btn {
+    width: 100%;
+    padding: 12px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 0;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+    text-align: left;
+}
+
+.section-toggle-btn:hover {
+    background: #5568d3;
+}
+
+.toggle-icon {
+    font-size: 0.8em;
+    transition: transform 0.3s;
+}
+
+.section-content {
+    background: white;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.section-content.expanded {
+    max-height: none;
+    transition: max-height 0.5s ease-in;
+}
+
+/* フィルタセクション */
+.filter-count {
+    background: rgba(255, 255, 255, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    margin-left: auto;
+}
+
+.filter-section {
+    margin: 15px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.filter-section:first-of-type {
+    margin-top: 15px;
+}
+
+.filter-section:last-of-type {
+    margin-bottom: 10px;
+    border-bottom: none;
+}
+
+.filter-subsection-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px 0;
+    user-select: none;
+}
+
+.filter-subsection-header:hover {
+    background: #f8f9fa;
+}
+
+.filter-subsection-header h4 {
+    font-size: 0.9em;
+    color: #495057;
+    margin: 0;
+    font-weight: 600;
+}
+
+.filter-subsection-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.filter-subsection-content.expanded {
+    max-height: 800px;
+    transition: max-height 0.5s ease-in;
+}
+
+.toggle-all-btn {
+    width: 100%;
+    padding: 6px 10px;
+    margin: 8px 0;
+    background: #f8f9fa;
+    color: #495057;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 0.85em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.toggle-all-btn:hover {
+    background: #e9ecef;
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.filter-section h4 {
+    font-size: 0.9em;
+    color: #495057;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    color: #495057;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.2s;
+}
+
+.checkbox-group label:hover {
+    color: #667eea;
+}
+
+.checkbox-group input[type="checkbox"],
+.checkbox-group input[type="radio"] {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.apply-filter-btn {
+    width: calc(100% - 30px);
+    margin: 0 15px 15px 15px;
+    padding: 10px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.apply-filter-btn:hover {
+    background: #5568d3;
+    transform: translateY(-1px);
+}
+
+/* ツールリスト */
+.tools-list {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tool-btn {
+    width: 100%;
+    padding: 10px 15px;
+    background: white;
+    color: #495057;
+    border: 2px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+}
+
+.tool-btn:hover {
+    background: #f8f9fa;
+    border-color: #667eea;
+    color: #667eea;
+    transform: translateX(5px);
+}
+
+/* 問題カード */
+.questions-cards {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.question-card {
+    padding: 15px 20px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.question-card:hover {
+    background: #f8f9fa;
+}
+
+.question-card.active {
+    background: #e3f2fd;
+    border-left: 4px solid #2196f3;
+}
+
+.question-card.answered {
+    background: #f1f8e9;
+}
+
+.question-card.correct {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.question-card.incorrect {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+}
+
+.question-card.correct::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    color: #4caf50;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.question-card.incorrect::after {
+    content: "✗";
+    position: absolute;
+    right: 15px;
+    top: 15px;
+    color: #f44336;
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.card-number {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1em;
+}
+
+.card-domain {
+    font-size: 0.75em;
+    padding: 3px 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    color: #495057;
+}
+
+.card-question {
+    font-size: 0.9em;
+    color: #495057;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* カードのタグ */
+.card-tags {
+    margin-top: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+/* 右側：問題詳細 */
+.question-detail {
+    flex: 1;
+    background: white;
+    overflow-y: auto;
+    padding: 30px;
+}
+
+/* 固定の次へボタン */
+.fixed-next-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    padding: 15px 30px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.5);
+    z-index: 1000;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.fixed-next-btn:hover {
+    background: #5568d3;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+}
+
+.fixed-next-btn:disabled {
+    background: #dee2e6;
+    color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.fixed-next-btn:disabled:hover {
+    transform: none;
+}
+
+.detail-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6c757d;
+    font-size: 1.2em;
+}
+
+.detail-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.question-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #667eea;
+    position: relative;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+/* タグアイコンボタン（右上配置） */
+.tag-icon-btn {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: none;
+    border: none;
+    font-size: 2em;
+    cursor: pointer;
+    color: #ccc;
+    transition: all 0.3s;
+    padding: 0;
+    line-height: 1;
+}
+
+.tag-icon-btn:hover {
+    transform: scale(1.2);
+    color: #aaa;
+}
+
+.tag-icon-btn.active {
+    color: #ff9800;
+}
+
+.tag-icon-btn.active:hover {
+    color: #f57c00;
+}
+
+.question-number {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #667eea;
+}
+
+.domain-badge {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+/* 問題カードのタグインジケーター */
+.card-tags {
+    margin-top: 8px;
+}
+
+.tag-indicator {
+    color: #ff9800;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
+.question-text {
+    font-size: 1.15em;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    color: #212529;
+    font-weight: 500;
+}
+
+/* Prism.jsコードブロックのスタイル調整 */
+pre[class*="language-"] {
+    margin: 15px 0;
+    border-radius: 8px;
+    font-size: 0.95em;
+}
+
+code[class*="language-"] {
+    font-family: 'Courier New', 'Consolas', monospace;
+    line-height: 1.5;
+}
+
+/* 旧スタイルとの互換性のため残す */
+.code-block {
+    background: #282c34;
+    color: #abb2bf;
+    padding: 15px;
+    border-radius: 8px;
+    margin: 15px 0;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+}
+
+.choices {
+    margin: 25px 0;
+}
+
+.choice {
+    padding: 15px 20px;
+    margin: 10px 0;
+    background: white;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.choice:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.choice.selected {
+    border-color: #667eea;
+    background: #e3f2fd;
+}
+
+.choice.correct {
+    border-color: #28a745;
+    background: #d4edda;
+}
+
+.choice.incorrect {
+    border-color: #dc3545;
+    background: #f8d7da;
+}
+
+.choice-label {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.1em;
+    flex-shrink: 0;
+}
+
+.choice.correct .choice-label {
+    color: #28a745;
+}
+
+.choice.incorrect .choice-label {
+    color: #dc3545;
+}
+
+.answer-section {
+    margin-top: 30px;
+}
+
+.answer-toggle {
+    width: 100%;
+    padding: 15px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.answer-toggle:hover {
+    background: #5568d3;
+}
+
+.answer-toggle.active {
+    background: #28a745;
+}
+
+.answer-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-out;
+}
+
+.answer-content.show {
+    max-height: 5000px;
+    padding-top: 20px;
+}
+
+.key-point {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #0056b3;
+    margin-bottom: 15px;
+    padding: 12px 15px;
+    background: #e3f2fd;
+    border-radius: 8px;
+    border-left: 4px solid #2196f3;
+}
+
+.correct-answer {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #28a745;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #d4edda;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+}
+
+.explanation {
+    line-height: 1.8;
+    color: #495057;
+}
+
+.explanation h4 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #212529;
+    font-size: 1.1em;
+}
+
+.explanation ul, .explanation ol {
+    margin-left: 25px;
+    margin-top: 10px;
+    margin-bottom: 15px;
+}
+
+.explanation li {
+    margin: 8px 0;
+    line-height: 1.6;
+}
+
+.explanation p {
+    margin: 15px 0;
+    line-height: 1.8;
+}
+
+.explanation code {
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: #e83e8c;
+    font-size: 0.9em;
+}
+
+.explanation strong {
+    color: #212529;
+    font-weight: 700;
+}
+
+/* スクロールバーのスタイル */
+.questions-list::-webkit-scrollbar,
+.question-detail::-webkit-scrollbar {
+    width: 10px;
+}
+
+.questions-list::-webkit-scrollbar-track,
+.question-detail::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.questions-list::-webkit-scrollbar-thumb,
+.question-detail::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+.questions-list::-webkit-scrollbar-thumb:hover,
+.question-detail::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* コピーボタンセクション */
+.copy-section {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #e9ecef;
+    text-align: center;
+}
+
+.copy-question-btn {
+    padding: 12px 30px;
+    background: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.copy-question-btn:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    header {
+        padding: 12px 20px;
+    }
+
+    h1 {
+        font-size: 1.3em;
+        margin-bottom: 3px;
+    }
+
+    .subtitle {
+        font-size: 0.85em;
+    }
+
+    .controls {
+        padding: 10px 15px;
+        gap: 8px;
+    }
+
+    select, button {
+        padding: 6px 12px;
+        font-size: 0.9em;
+    }
+
+    .toggle-list-btn {
+        display: block;
+    }
+
+    .main-content {
+        position: relative;
+    }
+
+    .questions-list {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 85%;
+        height: 100%;
+        max-height: none;
+        border-right: none;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        z-index: 100;
+        transform: translateX(-100%);
+    }
+
+    .questions-list.show {
+        transform: translateX(0);
+    }
+
+    .question-detail {
+        padding: 15px;
+    }
+
+    .detail-content {
+        padding: 0;
+    }
+
+    .stats {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .stat-item {
+        font-size: 0.8em;
+        padding: 5px 10px;
+    }
+
+    .stat-label {
+        font-size: 0.8em;
+    }
+
+    .stat-value {
+        font-size: 1em;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group select {
+        flex: 1;
+    }
+
+    .fixed-next-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        font-size: 1em;
+    }
+}

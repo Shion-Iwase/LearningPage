@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DBMLA 練習問題</title>
+    <link rel="stylesheet" href="exam_style.css">
+    <!-- Prism.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎓 DBMLA 練習問題</h1>
+            <p class="subtitle">Databricks Machine Learning Associate 試験対策</p>
+        </header>
+
+        <div class="controls">
+            <button class="toggle-list-btn" onclick="toggleQuestionsList()">📋 問題一覧</button>
+
+            <div class="tools-menu-container">
+                <button class="tools-btn" onclick="toggleToolsMenu()">🛠️ ツール</button>
+                <div class="tools-dropdown" id="tools-dropdown">
+                    <button onclick="resetFilters(); closeToolsMenu()">🔄 フィルタをリセット</button>
+                    <button onclick="resetAll(); closeToolsMenu()">�️ すべてリセット</button>
+                    <button onclick="createCheatSheet(); closeToolsMenu()" title="タグ付き問題・不正解問題の要点をまとめたファイルをダウンロード">📝 苦手対策シート作成</button>
+                    <button onclick="showShortcutHelp(); closeToolsMenu()" title="キーボードショートカット">⌨️ ショートカット</button>
+                </div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">表示中:</span>
+                    <span class="stat-value" id="visible-count">10</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">回答済:</span>
+                    <span class="stat-value" id="answered-count">0/10</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">正答率:</span>
+                    <span class="stat-value" id="accuracy-rate">-%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左側:問題リスト -->
+            <div class="questions-list" id="questions-list">
+                <!-- フィルタパネル -->
+                <div class="filter-panel">
+                    <button class="filter-toggle-btn" onclick="toggleFilterPanel()">
+                        🔍 フィルター <span class="filter-count" id="filter-count"></span>
+                    </button>
+                    <div class="filter-options" id="filter-options" style="display: none;">
+                        <!-- 問題セット -->
+                        <div class="filter-section">
+                            <h4>問題セット</h4>
+                            <div class="checkbox-group">
+                                <label><input type="checkbox" name="examSet" value="1" checked> 過去問1</label>
+                                <label><input type="checkbox" name="examSet" value="2" checked> 過去問2</label>
+                                <label><input type="checkbox" name="examSet" value="3" checked> 過去問3</label>
+                            </div>
+                        </div>
+
+                        <!-- ステータス -->
+                        <div class="filter-section">
+                            <h4>ステータス</h4>
+                            <div class="checkbox-group">
+                                <label><input type="radio" name="status" value="all" checked> すべて</label>
+                                <label><input type="radio" name="status" value="unanswered"> 未回答</label>
+                                <label><input type="radio" name="status" value="correct"> 正解</label>
+                                <label><input type="radio" name="status" value="incorrect"> 不正解</label>
+                            </div>
+                        </div>
+
+                        <!-- ドメイン -->
+                        <div class="filter-section">
+                            <h4>ドメイン</h4>
+                            <div class="checkbox-group" id="domain-checkboxes">
+                                <!-- ドメインのチェックボックスはJavaScriptで動的生成 -->
+                            </div>
+                        </div>
+
+                        <!-- タグ -->
+                        <div class="filter-section">
+                            <h4>タグ</h4>
+                            <div class="checkbox-group">
+                                <label><input type="radio" name="tag" value="all" checked> すべて</label>
+                                <label><input type="radio" name="tag" value="tagged"> タグ付きのみ</label>
+                                <label><input type="radio" name="tag" value="untagged"> タグなしのみ</label>
+                            </div>
+                        </div>
+
+                        <button class="apply-filter-btn" onclick="applyFilters()">適用</button>
+                    </div>
+                </div>
+
+                <!-- 問題カード -->
+                <div class="questions-cards" id="questions-cards">
+                    <!-- 問題カードがJavaScriptで動的に生成されます -->
+                </div>
+            </div>
+
+            <!-- 右側：問題詳細 -->
+            <div class="question-detail" id="question-detail">
+                <div class="detail-empty">
+                    ← 左側から問題を選択してください
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="exam_data.js"></script>
+    <script src="exam_data2.js"></script>
+    <script src="exam_data3.js"></script>
+    <script src="exam_app.js"></script>
+    <!-- Prism.js for syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+</body>
+</html>

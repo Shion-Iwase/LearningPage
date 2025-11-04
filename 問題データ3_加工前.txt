@@ -1,0 +1,2567 @@
+問題3-1
+Scenario : In a regression AutoML task, you want to store the generated notebooks and experiments in a specific directory. Which parameter should you use for this purpose?
+正解
+experiment_dir
+feature_store_lookups
+exclude_cols
+primary_metric
+全体的な説明
+Correct Answer:
+experiment_dir
+Explanation:
+Why This Is Correct?
+In Databricks AutoML, the experiment_dir parameter explicitly specifies the directory path where all AutoML-generated assets (notebooks, experiments, and artifacts) will be stored.
+This ensures organized, centralized tracking of runs and reproducibility.
+Example Usage:
+from databricks import automl
+automl.regress(
+    dataset=df,
+    target_col="price",
+    experiment_dir="/Shared/automl/price_prediction",  # Custom directory
+    primary_metric="rmse"
+)
+Saves outputs to:
+/Shared/automl/price_prediction/
+├── notebooks/          # Generated training notebooks
+├── experiment/        # MLflow experiment data
+└── artifacts/         # Models and metrics
+Why Other Options Are Incorrect?
+feature_store_lookups:
+Used to reference Feature Store tables, not control output locations.
+exclude_cols:
+Lists columns to ignore during training, unrelated to storage paths.
+primary_metric:
+Defines the optimization metric (e.g., "rmse", "r2"), not file paths.
+Key Takeaway:
+Use experiment_dir to enforce a structured storage location for AutoML outputs. Default paths (e.g., /Users/email@company/automl) can lead to clutter.
+Pro Tip: Combine with MLflow tracking to log experiments under a unified namespace.
+ドメイン
+AutoML
+
+問題3-2
+On Databricks, what scenarios are supported using the clients for Feature Engineering in Unity Catalog and Feature Store?
+Only reading feature tables is supported.
+正解
+Creating, reading, and writing feature tables, training and scoring models on feature data, and publishing feature tables to online stores for real-time serving are supported.
+Only unit testing using mock frameworks is supported.
+Writing integration tests to be run on Databricks is not supported.
+全体的な説明
+Correct Answer:
+Creating, reading, and writing feature tables, training and scoring models on feature data, and publishing feature tables to online stores for real-time serving are supported.
+Explanation:
+Why This Is Correct?
+Databricks Feature Engineering in Unity Catalog and Feature Store support end-to-end ML workflows:
+Feature Table Management: Create, read, and update feature tables in Unity Catalog.
+Model Training/Scoring: Use features for batch or real-time inference (e.g., FeatureLookup in FeatureStoreClient).
+Online Serving: Publish features to low-latency stores (e.g., DynamoDB, Redis) via publish_table.
+Example Workflow:
+from databricks.feature_store import FeatureStoreClient
+fs = FeatureStoreClient()
+# Create/write features
+fs.create_table(name="features.price_prediction", df=feature_df)
+# Train model with feature lookup
+model = train_with_features(fs, training_df)
+# Publish to online store
+fs.publish_table("features.price_prediction", online_store="redis")
+Why Other Options Are Incorrect?
+"Only reading feature tables":
+Feature Store supports full CRUD operations, not just reads.
+"Only unit testing":
+Testing is possible, but not the primary scope of Feature Store.
+"Writing integration tests not supported":
+Databricks supports integration tests (e.g., CI/CD pipelines with MLflow).
+Key Takeaway:
+Feature Engineering in Unity Catalog enables full lifecycle management—from feature creation to online serving—integrated with Databricks’ ML ecosystem.
+Pro Tip: Use Feature Monitoring (GA in 2024) to track data drift in published tables.
+ドメイン
+Feature Store
+
+問題3-3
+A machine learning model has been successfully deployed in a Databricks environment using MLflow. The model is now receiving a significant number of requests, and the data scientist needs to ensure high availability.
+What strategy should the data scientist employ to achieve this?
+Increase the Databricks cluster size.
+正解
+Implement load balancing for the deployed model's REST API.
+Schedule periodic restarts of the Databricks cluster.
+Use a separate Databricks workspace for production deployments.
+全体的な説明
+Correct Answer:
+Implement load balancing for the deployed model's REST API.
+Explanation:
+Why This Is Correct?
+Load balancing distributes incoming inference requests across multiple replicas of the model endpoint, ensuring:
+High availability: No single point of failure.
+Scalability: Handles increased traffic by adding replicas dynamically.
+Low latency: Requests are routed to the least busy instance.
+Databricks integrates with MLflow Model Serving, which supports horizontal scaling (e.g., Kubernetes-based load balancing).
+Implementation Steps:
+Deploy the MLflow model as a REST API with mlflow models serve.
+Use Databricks Model Serving or an external orchestrator (e.g., AWS ALB, NGINX) to balance traffic.
+Example:
+# Start multiple model servers (replicas)
+mlflow models serve -m models:/prod_model/1 -p 5001 &
+mlflow models serve -m models:/prod_model/1 -p 5002 &
+# Configure NGINX to load balance
+upstream model_servers {
+    server localhost:5001;
+    server localhost:5002;
+}
+Why Other Options Are Incorrect?
+"Increase cluster size":
+Only helps for batch processing (not real-time APIs). Model Serving uses separate compute.
+"Schedule cluster restarts":
+Disrupts service; availability is achieved via redundancy, not restarts.
+"Separate workspace for production":
+Isolates environments but doesn’t address request load.
+Key Takeaway:
+For high-availability ML APIs, load balancing is mandatory. Use:
+Databricks-native serving (auto-scales replicas).
+Cloud load balancers (e.g., AWS ELB, Azure Traffic Manager) for hybrid setups.
+Pro Tip: Monitor latency/errors with Databricks Lakeview Dashboards.
+ドメイン
+Databricks ML
+
+問題3-4
+Given a 3-fold Cross-Validation with a grid search over a hyperparameter space consisting of 2 values for parameter A, 5 values for parameter B, and 10 values for parameter C, how many total model runs will be executed?
+Choose only ONE best answer.
+18
+正解
+300
+50
+100
+None of the above
+全体的な説明
+Correct Answer:
+300
+Explanation:
+Why This Is Correct?
+Grid Search evaluates all combinations of hyperparameters.
+3-fold Cross-Validation trains a model for each combination 3 times (once per fold).
+Calculation:
+Parameter Combinations: 2 (A) × 5 (B) × 10 (C) = 100 unique combinations.
+Total Runs: 100 combinations × 3 folds = 300 model runs.
+Example:
+from sklearn.model_selection import GridSearchCV
+param_grid = {
+    'A': [1, 2],          # 2 values
+    'B': [0.1, 0.2, 0.3, 0.4, 0.5],  # 5 values
+    'C': list(range(10))   # 10 values
+}
+grid_search = GridSearchCV(estimator=model, param_grid=param_grid, cv=3)
+grid_search.fit(X, y)  # Executes 300 runs (2×5×10 × 3)
+Why Other Options Are Incorrect?
+18: Incorrectly multiplies folds by the sum of parameter counts (3 × (2+5+10)).
+50: Misses folds (2×5×10 = 100, but ignores 3-fold CV).
+100: Counts only unique parameter sets, excluding folds.
+Key Takeaway:
+For Grid Search + Cross-Validation, total runs =
+(# values for A × # values for B × ...) × # folds.
+Pro Tip: Use RandomizedSearchCV to sample fewer combinations when the space is large.
+ドメイン
+ML Workflows
+
+問題3-5
+What is the recommendation for models with long training times when starting hyperparameter tuning?
+Experiment with large datasets and a few hyperparameters
+正解
+Experiment with small datasets and many hyperparameters
+Fix all hyperparameters before experimentation
+Avoid using MLflow for identifying best performing models
+全体的な説明
+Correct Answer:
+Experiment with small datasets and many hyperparameters
+Explanation:
+Why This Is Correct?
+Long training times make it impractical to test many hyperparameter combinations on full datasets.
+Start small: Use a subset of data to quickly evaluate hyperparameter performance.
+Broad search: Test many hyperparameters to identify promising ranges before scaling up.
+Example workflow:
+Use 10% of data to test 100 hyperparameter combinations.
+Narrow down to top 5 configurations.
+Retrain top candidates on full data.
+Tools to Implement This:
+Hyperopt (with SparkTrials for parallel tuning).
+Databricks AutoML (automates this process).
+Why Other Options Are Incorrect?
+"Large datasets and few hyperparameters":
+High compute cost with limited exploration.
+"Fix all hyperparameters":
+Defeats the purpose of tuning.
+"Avoid MLflow":
+MLflow is critical for tracking performance across runs.
+Key Takeaway:
+For long-training models:
+Reduce data size for initial hyperparameter screening.
+Expand search space to cover diverse configurations.
+Scale up only for top candidates.
+Pro Tip: Use max_evals in Hyperopt to control the number of trials.
+ドメイン
+Hyperopt and SparkTrials
+
+問題3-6
+What types of problems can you use Databricks AutoML for?
+Only regression problems.
+Only classification problems.
+Only forecasting problems.
+正解
+Regression, classification, and forecasting problems.
+全体的な説明
+Correct Answer:
+Regression, classification, and forecasting problems.
+Explanation:
+Why This Is Correct?
+Databricks AutoML supports three main problem types:
+Regression: Predict continuous values (e.g., house prices).
+Classification: Predict discrete labels (e.g., spam vs. not spam).
+Forecasting: Time-series predictions (e.g., sales forecasts).
+It automates:
+Feature engineering.
+Model selection (e.g., XGBoost, Random Forest).
+Hyperparameter tuning.
+Example Workflows:
+Classification:
+from databricks import automl
+automl.classify(df, target_col="label")
+Time-Series Forecasting:
+automl.forecast(df, time_col="date", target_col="sales")
+Why Other Options Are Incorrect?
+"Only regression/classification/forecasting":
+AutoML handles all three, not just one.
+Key Takeaway:
+Use Databricks AutoML for:
+Structured data (regression/classification).
+Time-series data (forecasting).
+Unstructured data (via Delta Lake integrations).
+Pro Tip: For deep learning (e.g., images/text), combine with MLflow and Hugging Face.
+ドメイン
+AutoML
+
+問題3-7
+What are the standard evaluation metrics automatically computed for each run in an AutoML experiment when dealing with classification problems?
+Choose only ONE best answer.
+正解
+All of these
+Accuracy
+Area Under the ROC Curve (AUC-ROC)
+Recall
+F1 Score
+全体的な説明
+Correct Answer:
+All of these
+Explanation:
+Why This Is Correct?
+Databricks AutoML for classification automatically computes multiple standard metrics, including:
+Accuracy: Overall correctness ((TP+TN)/Total).
+AUC-ROC: Model’s ability to distinguish classes (higher = better).
+Recall: True Positive Rate (TP/(TP+FN)).
+F1 Score: Harmonic mean of precision and recall.
+These metrics provide a holistic view of model performance across different thresholds and class imbalances.
+Example Output:
+from databricks import automl
+summary = automl.classify(df, target_col="label")
+display(summary.trials)  # Shows all metrics per trial
+TrialAccuracyAUC-ROCRecallF110.920.980.910.93
+Why Other Options Are Incorrect?
+Individual metrics (Accuracy, AUC-ROC, Recall, F1) are part of the full set—not standalone.
+Key Takeaway:
+AutoML evaluates classification models using all key metrics by default. Use the leaderboard to compare trials and select the best model based on your priority (e.g., AUC for imbalanced data).
+Pro Tip: Customize the primary_metric (e.g., "f1") if one metric matters most.
+ドメイン
+AutoML
+
+問題3-8
+What does a reported loss of NaN in Hyperopt usually indicate, and how can it be addressed?
+NaN loss is a Hyperopt bug and should be reported to the developers
+NaN loss indicates a successful run that can be safely ignored
+正解
+NaN loss means an error in the objective function, and adjusting the hyperparameter space or modifying the objective function can address it
+NaN loss is a SparkTrials issue and can be resolved by configuring parallelism
+全体的な説明
+Correct Answer:
+✅ NaN loss means an error in the objective function, and adjusting the hyperparameter space or modifying the objective function can address it.
+Detailed Explanation of the Correct Answer:
+✅ "NaN loss means an error in the objective function, and adjusting the hyperparameter space or modifying the objective function can address it."
+In Hyperopt, a NaN loss typically occurs due to an issue in the objective function.
+This means that during some iterations, the function returns NaN (Not a Number), which prevents Hyperopt from properly evaluating the loss.
+Common Causes of NaN Loss in Hyperopt:
+Invalid Hyperparameter Values
+Some hyperparameter combinations may result in mathematical errors (e.g., log(0), division by zero, or numerical overflows).
+Solution: Ensure that the search space avoids invalid values (e.g., setting lower bounds on log-transformed parameters).
+Objective Function Errors
+If the function encounters an exception, it may return NaN instead of a valid loss.
+Solution: Use proper error handling in the function.
+Numerical Instability
+Some ML models (e.g., deep learning) may result in overflow or underflow issues.
+Solution: Regularize or constrain hyperparameters that cause instability.
+How to Fix NaN Loss in Hyperopt?
+✅ Step 1: Add Debugging to Identify the Cause
+Modify the objective function to catch errors:
+import numpy as np
+import hyperopt
+def objective(params):
+    try:
+        value = some_model_function(params)  # Replace with actual function
+        if np.isnan(value) or np.isinf(value):  # Check for NaN or infinity
+            return {'loss': float('inf'), 'status': hyperopt.STATUS_FAIL}
+        return {'loss': value, 'status': hyperopt.STATUS_OK}
+    except Exception as e:
+        print(f"Error in objective function: {e}")
+        return {'loss': float('inf'), 'status': hyperopt.STATUS_FAIL}
+Returns float('inf') instead of NaN to help Hyperopt continue searching.
+Catches exceptions that might cause NaN errors.
+✅ Step 2: Adjust Hyperparameter Space
+Ensure that parameters have valid ranges.
+Example before (incorrect):
+space = {
+    'learning_rate': hyperopt.hp.uniform('learning_rate', 0, 1),  # Can be 0 (dangerous)
+    'batch_size': hyperopt.hp.choice('batch_size', [0, 16, 32, 64]),  # Includes 0 (error!)
+}
+Example after (correct):
+space = {
+    'learning_rate': hyperopt.hp.uniform('learning_rate', 0.001, 1),  # Avoids 0
+    'batch_size': hyperopt.hp.choice('batch_size', [16, 32, 64]),  # Removes 0
+}
+Why Other Options Are Incorrect:
+❌ "NaN loss is a Hyperopt bug and should be reported to the developers."
+Incorrect, because NaN loss is usually a user-side issue, not a Hyperopt bug.
+It is typically due to invalid hyperparameter choices or errors in the objective function.
+❌ "NaN loss indicates a successful run that can be safely ignored."
+Incorrect, because NaN prevents proper optimization and should never be ignored.
+It may cause Hyperopt to fail in finding the optimal set of parameters.
+❌ "NaN loss is a SparkTrials issue and can be resolved by configuring parallelism."
+Incorrect, because NaN loss is unrelated to SparkTrials parallelism.
+Even in single-threaded mode, a bad objective function can still produce NaN losses.
+Final Conclusion:
+A NaN loss in Hyperopt usually means an error in the objective function due to invalid hyperparameter values, mathematical errors, or numerical instability.
+To fix it:
+Validate the hyperparameter search space.
+Modify the objective function to handle NaNs properly.
+Use error handling to prevent failures during optimization
+ドメイン
+Hyperopt and SparkTrials
+
+問題3-9
+In PySpark, _________ library is provided which makes integrating Python with Apache Spark easy.
+Py3j
+Py5j
+Py2j
+正解
+Py4j
+全体的な説明
+Correct Answer:
+Py4j
+Explanation:
+Why This Is Correct?
+Py4j is the official library that enables Python to interact with the Java Virtual Machine (JVM), which is critical for PySpark's functionality.
+It acts as a bridge between Python and Spark's Java/Scala-based core, allowing:
+Execution of Spark operations (e.g., RDD/DataFrame transformations).
+Access to JVM objects (e.g., SparkContext, SparkSession).
+How It Works:
+When you run PySpark code, Py4j translates Python calls into JVM calls (and vice versa).
+Example:
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.getOrCreate()  # Py4j handles JVM communication
+Why Other Options Are Incorrect?
+Py3j/Py5j/Py2j: These are not real libraries. Py4j is the only valid tool for Python-JVM integration in Spark.
+Key Takeaway:
+Py4j is the unsung hero of PySpark, enabling seamless Python-to-JVM interoperability. Without it, PySpark wouldn’t exist!
+Fun Fact: The name "Py4j" stands for Python for Java.
+ドメイン
+Databricks ML
+
+問題3-10
+Why should SparkTrials not be used on autoscaling clusters, and what issue can arise in such cases?
+SparkTrials is incompatible with autoscaling clusters
+Autoscaling clusters do not support SparkTrials configuration
+Hyperopt cannot select the parallelism value on autoscaling clusters
+正解
+Hyperopt selects parallelism when execution begins, and autoscaling may affect this configuration
+全体的な説明
+Correct Answer:
+Hyperopt selects parallelism when execution begins, and autoscaling may affect this configuration.
+Explanation:
+Why This Is Correct?
+SparkTrials sets parallelism (number of concurrent trials) at startup based on the initial cluster size.
+If the cluster autoscales up/down during execution:
+Resource Contention: New workers may not be utilized for existing trials.
+Underutilization: Reduced workers may leave trials queued.
+Example:
+from hyperopt import SparkTrials
+spark_trials = SparkTrials(parallelism=4)  # Fixed at startup
+If the cluster scales from 4 → 8 nodes, parallelism remains 4.
+Resulting Issues:
+Inefficient Scaling: Excess nodes sit idle.
+Stalled Trials: If nodes scale down, trials may hang.
+Why Other Options Are Incorrect?
+"SparkTrials is incompatible":
+It works, but autoscaling reduces effectiveness.
+"Autoscaling doesn’t support SparkTrials":
+Autoscaling works, but parallelism isn’t dynamic.
+"Hyperopt can’t select parallelism":
+It does, but only once at startup.
+Key Takeaway:
+For Hyperopt + SparkTrials, use fixed-size clusters to match parallelism. Autoscaling disrupts trial distribution.
+Pro Tip: For autoscaling clusters, use SparkTrials(parallelism=min_workers) to align with baseline resources.
+ドメイン
+Hyperopt and SparkTrials
+
+問題3-11
+What skill is valuable in modern data science for managing multi-task ML workflows?
+Efficient cluster creation
+正解
+Workflow orchestration
+Performance optimization
+Feature engineering
+全体的な説明
+Correct Answer:
+Workflow orchestration
+Explanation:
+Why This Is Correct?
+Workflow orchestration (e.g., Airflow, Databricks Workflows, Kubeflow) is essential for managing multi-task ML pipelines, including:
+Dependencies: Ensuring tasks (data prep → training → deployment) run in order.
+Scheduling: Automating recurring runs (e.g., nightly model retraining).
+Error Handling: Retries, alerts, and logging for robustness.
+Example:
+# Databricks Workflows example
+from databricks.sdk import WorkspaceClient
+w = WorkspaceClient()
+w.jobs.submit(run_name="retrain_model", tasks=[data_task, train_task, deploy_task])
+Impact on Multi-Task ML:
+Reproducibility: Track inputs/outputs across tasks.
+Scalability: Parallelize tasks across clusters.
+Why Other Options Are Less Critical?
+Efficient cluster creation: Important, but handled by infra teams/orchestrators.
+Performance optimization: Task-specific (e.g., model tuning), not pipeline-wide.
+Feature engineering: A single task within the workflow.
+Key Takeaway:
+Master orchestration tools (e.g., Airflow, MLflow Pipelines, Prefect) to design resilient, automated ML workflows.
+Pro Tip: Use MLflow Projects + Databricks Jobs for seamless orchestration with experiment tracking.
+ドメイン
+Databricks ML
+
+問題3-12
+True or False?
+Binning is the process of converting numeric data into categorical data Choose only ONE best answer.
+正解
+True
+False
+全体的な説明
+Correct Answer:
+True
+Explanation:
+Why This Is Correct?
+Binning (or discretization) transforms continuous numeric values into categorical bins/ranges.
+Example: Converting ages into groups like [0-18, 19-35, 36-60, 61+].
+Common methods:
+Equal-width binning: Fixed range (e.g., 0-10, 10-20).
+Equal-frequency binning: Each bin has ~same number of samples.
+Quantile binning: Uses percentile cuts.
+Code Example (Pandas):
+import pandas as pd
+df["age_bin"] = pd.cut(df["age"], bins=[0, 18, 35, 60, 100], labels=["0-18", "19-35", "36-60", "61+"])
+Why "False" Is Incorrect?
+Binning explicitly converts numeric → categorical (e.g., for decision trees or to reduce noise).
+Key Takeaway:
+Use binning to:
+Simplify models.
+Handle outliers.
+Capture non-linear relationships.
+Pro Tip: For ML, combine with one-hot encoding if binning ordinality isn’t meaningful.
+ドメイン
+ML Workflows
+
+問題3-13
+A data scientist has developed a linear regression model utilizing log(price) as the target variable. Using this model, they performed prediction, and the outcomes along with the actual label values are held in the Spark DataFrame named preds_df. They apply the following code block to assess the model:
+regression_evaluator.setMetricName("rmse").evaluate(preds_df)
+What adjustments should the data scientist make to the RMSE evaluation approach to make it comparable with the original price scale?
+Choose only ONE best answer.
+They should apply the logarithm to the predictions prior to calculating the RMSE.
+They should calculate the MSE of the log-transformed predictions to obtain the RMSE.
+正解
+They should apply the exponentiation function to the predictions before calculating the RMSE.
+They should take the exponent of the computed RMSE value.
+They should compute the logarithm of the derived RMSE value
+全体的な説明
+Correct Answer:
+They should apply the exponentiation function to the predictions before calculating the RMSE.
+Explanation:
+Why This Is Correct?
+The model predicts log(price), so predictions (preds_df) are on a log scale.
+To evaluate RMSE in the original price scale, you must:
+Exponentiate predictions: Convert log(price) back to price using exp().
+Compute RMSE between exponentiated predictions and actual price.
+Formula:
+Code Example:
+from pyspark.sql.functions import exp
+from pyspark.ml.evaluation import RegressionEvaluator
+# Convert predictions back to original scale
+preds_df = preds_df.withColumn("price_pred", exp("prediction"))
+# Calculate RMSE on original scale
+evaluator = RegressionEvaluator(predictionCol="price_pred", labelCol="price", metricName="rmse")
+rmse = evaluator.evaluate(preds_df)
+Why Other Options Are Incorrect?
+"Apply logarithm to predictions":
+Incorrect—this would keep RMSE on the log scale.
+"Calculate MSE of log-transformed predictions":
+Still evaluates log-scale error, not original prices.
+"Exponent of computed RMSE":
+Wrong—exponentiate predictions first, not the RMSE.
+"Logarithm of RMSE":
+Nonsensical—log(RMSE) distorts the metric.
+Key Takeaway:
+When using log-transformed targets, always exponentiate predictions before computing RMSE to compare errors in the original unit.
+Pro Tip: For asymmetric error penalties, consider Mean Absolute Percentage Error (MAPE) instead.
+ドメイン
+ML Workflows
+
+問題3-14
+When should regularization techniques like L1 and L2 regularization be applied in Spark ML algorithms?
+When dealing with categorical data
+正解
+When the model is overfitting
+When the dataset size is small
+When the dataset size is large
+全体的な説明
+Correct Answer:
+When the model is overfitting
+Explanation:
+Why This Is Correct?
+Regularization (L1/L2) is primarily used to prevent overfitting by:
+L1 (Lasso): Adds penalty proportional to absolute coefficients (can shrink some to zero for feature selection).
+L2 (Ridge): Adds penalty proportional to squared coefficients (smooths weights).
+Spark ML integrates regularization in algorithms like:
+LinearRegression (elasticNetParam blends L1/L2).
+LogisticRegression (regParam controls penalty strength).
+Example in Spark ML:
+from pyspark.ml.regression import LinearRegression
+# Ridge Regression (L2)
+lr = LinearRegression(regParam=0.1, elasticNetParam=0)  # Pure L2
+model = lr.fit(train_df)
+Why Other Options Are Incorrect?
+"Categorical data":
+Regularization is for numeric coefficients, not categorical encoding.
+"Small dataset":
+Overfitting risk exists, but regularization is not limited to small data.
+"Large dataset":
+Less prone to overfitting, but regularization can still help with noisy features.
+Key Takeaway:
+Use L1/L2 in Spark ML when:
+High variance (overfitting) is detected (e.g., great train accuracy but poor test accuracy).
+Feature selection is needed (L1).
+Pro Tip: Tune regParam via CrossValidator in Spark ML for optimal regularization strength.
+ドメイン
+Spark ML Algorithms
+
+問題3-15
+When creating a pandas-on-Spark DataFrame from a Spark DataFrame, what caution should be considered regarding the default index?
+The default index remains unchanged.
+正解
+A new default index is created.
+It depends on the size of the dataset.
+The default index is set to 'index_col'.
+全体的な説明
+Correct Answer:
+A new default index is created.
+Explanation:
+Why This Is Correct?
+When converting a Spark DataFrame to a pandas-on-Spark DataFrame, the library automatically generates a new default index (sequential integers) unless explicitly specified.
+This is because:
+Spark DataFrames are distributed and do not inherently have row indices.
+pandas-on-Spark mimics pandas behavior, where an index is fundamental.
+Example:
+import pyspark.pandas as ps
+spark_df = spark.createDataFrame([(1, "A"), (2, "B")], ["id", "value"])
+ps_df = ps.DataFrame(spark_df)  # New default index (0, 1, ...) is created
+Key Implications:
+Performance Overhead: Index creation requires shuffling data to ensure uniqueness.
+Data Integrity: The new index does not preserve the original Spark row order.
+Why Other Options Are Incorrect?
+"Remains unchanged":
+Spark DataFrames lack a default index, so nothing to preserve.
+"Depends on dataset size":
+Index creation is consistent (always happens).
+"Set to 'index_col'":
+Only occurs if you explicitly set index_col during conversion.
+Key Takeaway:
+To avoid surprises:
+Explicitly set an index if needed (e.g., ps.DataFrame(spark_df, index="id")).
+Use spark_df.to_pandas_on_spark() for clarity.
+Pro Tip: For large DataFrames, avoid default indices—use existing columns as indices to minimize shuffling.
+ドメイン
+Pandas API on Spark
+
+問題3-16
+What is the purpose of using the clients for integration testing, as mentioned in the provided example?
+To run unit tests on Databricks.
+正解
+To validate that a method correctly calls a function such as write_table in FeatureEngineeringClient or FeatureStoreClient.
+To install the Feature Engineering in Unity Catalog client or the Feature Store client locally for development.
+To enable CI/CD for the clients.
+全体的な説明
+Correct Answer:
+To validate that a method correctly calls a function such as write_table in FeatureEngineeringClient or FeatureStoreClient.
+Explanation:
+Why This Is Correct?
+Integration testing ensures that interactions between your code and external clients (e.g., FeatureEngineeringClient) work as expected.
+It verifies:
+Correct API Calls: E.g., Does write_table actually invoke the client’s method with the right parameters?
+End-to-End Workflow: Does the client respond as expected when integrated with your code?
+Example:
+def test_write_table_integration():
+    mock_client = Mock(FeatureStoreClient)
+    your_method(mock_client)  # Calls mock_client.write_table(...)
+    mock_client.write_table.assert_called_once()  # Validate integration
+Key Benefit:
+Catches issues like misconfigured parameters or client misusage before production.
+Why Other Options Are Incorrect?
+"Run unit tests on Databricks":
+Unit tests isolate components; integration tests validate interactions.
+"Install clients locally":
+Development setup, not testing.
+"Enable CI/CD":
+CI/CD pipelines use tests but aren’t the purpose of integration tests.
+Key Takeaway:
+Use integration tests to validate client interactions (e.g., Feature Store writes) and prevent runtime failures.
+Pro Tip: Combine with pytest fixtures to mock clients for reproducible tests.
+ドメイン
+Feature Store
+
+問題3-17
+A data scientist has designed a three-class decision tree classifier utilizing Spark MLandcomputed the predictions in a Spark DataFrame, named preds_dt, with the following schema:
+prediction DOUBLE, actual DOUBLE.
+Which code segment can be used to calculate the accuracy of the model based on the data in preds_dt and assign the result to the accuracy variable?
+Choose only ONE best answer.
+None
+accuracy = MulticlassClassificationEvaluator
+(predictionCol="prediction",
+ labelCol="actual", metricName="accuracy")
+accuracy = RegressionEvaluator
+(predictionCol="prediction", labelCol="actual",
+ metricName="accuracy")
+正解
+ classification_evaluator =
+MulticlassClassificationEvaluator
+(predictionCol="prediction", labelCol="actual", metricName="accuracy")
+accuracy = classification_evaluator.evaluate(preds_df)
+accuracy = Summarizer
+(predictionCol="prediction", labelCol="actual",
+ metricName="accuracy"
+全体的な説明
+Correct Answer:
+classification_evaluator = MulticlassClassificationEvaluator(
+    predictionCol="prediction",
+    labelCol="actual",
+    metricName="accuracy"
+)
+accuracy = classification_evaluator.evaluate(preds_df)
+Explanation:
+Why This Is Correct?
+For a multi-class classifier in Spark ML, the MulticlassClassificationEvaluator is the correct tool to compute metrics like accuracy.
+Key steps:
+Initialize the evaluator with:
+predictionCol="prediction" (model outputs).
+labelCol="actual" (true labels).
+metricName="accuracy".
+Call evaluate() on the DataFrame (preds_df).
+Example:
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+evaluator = MulticlassClassificationEvaluator(
+    predictionCol="prediction",
+    labelCol="actual",
+    metricName="accuracy"
+)
+accuracy = evaluator.evaluate(preds_df)  # Returns accuracy as a float
+Why Other Options Are Incorrect?
+RegressionEvaluator:
+For regression tasks, not classification.
+Summarizer:
+Does not exist in Spark ML.
+Missing evaluate() call:
+Just initializing the evaluator doesn’t compute the metric.
+Key Takeaway:
+For multi-class accuracy in Spark ML:
+Use MulticlassClassificationEvaluator.
+Ensure column names match your DataFrame schema.
+Pro Tip: Other supported metrics include f1, weightedPrecision, and weightedRecall.
+ドメイン
+ML Workflows
+
+問題3-18
+How can you update an existing feature table in Unity Catalog with new data?
+By using the fe.create_table function with a new dataframe.
+正解
+By using the fe.write_table function with mode="merge" and providing a new dataframe.
+By using the fe.read_table function and updating the dataframe.
+By using the fe.update_table function with a new dataframe.
+全体的な説明
+Correct Answer:
+By using the fe.write_table function with mode="merge" and providing a new dataframe.
+Explanation:
+Why This Is Correct?
+The fe.write_table function in Databricks Feature Engineering (Unity Catalog) supports mode="merge", which:
+Updates existing records (matched by primary keys).
+Inserts new records (if they don’t exist).
+This is the standard method for incremental updates to feature tables.
+Example Code:
+from databricks.feature_engineering import FeatureEngineeringClient
+fe = FeatureEngineeringClient()
+# Merge new data into an existing table
+fe.write_table(
+    name="catalog.schema.feature_table",
+    df=new_data_df,
+    mode="merge"  # Key parameter
+)
+Primary keys (defined during table creation) determine which rows to update/insert.
+Why Other Options Are Incorrect?
+fe.create_table:
+Creates a new table (fails if the table exists).
+fe.read_table + manual updates:
+Doesn’t persist changes to the original table.
+fe.update_table:
+No such function exists in the API.
+Key Takeaway:
+For incremental updates to Unity Catalog feature tables:
+Use fe.write_table with mode="merge".
+Ensure the new DataFrame includes the primary key columns for matching.
+Pro Tip: Combine with fe.create_table (for initial setup) and time-travel (for versioning).
+ドメイン
+Feature Store
+
+問題3-19
+In an AutoML experiment, what are the evaluation metrics automatically calculated for each run when dealing with regression problems?
+Mean Absolute Error (MAE)
+Coefficient of Determination (R-squared)
+Root Mean Square Error (RMSE)
+Mean Square Error (MSE)
+正解
+All of the above
+全体的な説明
+Correct Answer:
+✅ All of the above
+Detailed Explanation of the Correct Answer:
+✅ "All of the above"
+Databricks AutoML automatically calculates multiple evaluation metrics for regression problems, including:
+Mean Absolute Error (MAE)
+Coefficient of Determination (R-squared, R²)
+Root Mean Square Error (RMSE)
+Mean Square Error (MSE)
+Breakdown of Each Regression Metric:
+MetricDescriptionBest Use CaseMean Absolute Error (MAE)Measures the average absolute differences between actual and predicted values.Useful when all prediction errors should be equally weighted.R-squared (R², Coefficient of Determination)Represents the proportion of variance explained by the model.Measures goodness of fit—higher values mean better fit.Root Mean Square Error (RMSE)Measures the square root of the average squared errors.Penalizes large errors more heavily than MAE.Mean Square Error (MSE)Measures the average squared errors between actual and predicted values.Used when large errors should be penalized more significantly.
+Example: Evaluating a Regression Model in AutoML
+from pyspark.ml.evaluation import RegressionEvaluator
+# Initialize evaluator
+evaluator = RegressionEvaluator(predictionCol="prediction", labelCol="actual")
+# Compute different metrics
+mae = evaluator.setMetricName("mae").evaluate(preds_df)
+r2 = evaluator.setMetricName("r2").evaluate(preds_df)
+rmse = evaluator.setMetricName("rmse").evaluate(preds_df)
+mse = evaluator.setMetricName("mse").evaluate(preds_df)
+print(f"MAE: {mae}, R-squared: {r2}, RMSE: {rmse}, MSE: {mse}")
+Databricks AutoML logs these metrics for every model run, enabling easy comparison.
+Why Other Options Are Incorrect:
+❌ "Mean Absolute Error (MAE)"
+Incorrect, because MAE is just one of several evaluation metrics used in regression.
+❌ "Coefficient of Determination (R-squared)"
+Incorrect, because AutoML also computes MSE, RMSE, and MAE.
+❌ "Root Mean Square Error (RMSE)"
+Incorrect, because other regression metrics are calculated along with RMSE.
+❌ "Mean Square Error (MSE)"
+Incorrect, because AutoML tracks additional metrics like MAE and R².
+Final Conclusion:
+In an AutoML regression experiment, the automatically calculated evaluation metrics include MAE, R², RMSE, and MSE, so the correct answer is:
+✅ "All of the above"
+ドメイン
+Scaling ML Models
+
+問題3-20
+A data scientist is working on a machine learning project in Databricks that involves sensitive data. The project requires collaboration with external stakeholders who should have limited access to the data.
+How can the data scientist securely share the Databricks notebook with external collaborators?
+正解
+Use Databricks Workspace ACLs (Access Control Lists) to restrict access to specific users.
+Export the notebook and share it via email with external collaborators.
+Create a shared secret key for external collaborators to access the notebook.
+Utilize Databricks Managed Identity to grant temporary access to external collaborators.
+全体的な説明
+Correct Answer:
+Use Databricks Workspace ACLs (Access Control Lists) to restrict access to specific users.
+Explanation:
+Why This Is Correct?
+Workspace ACLs in Databricks allow granular control over notebook access:
+Grant read-only or edit permissions to specific external users (via their email or group).
+Restrict access to sensitive data by limiting permissions at the notebook, folder, or workspace level.
+Example steps:
+Go to Workspace → Right-click the notebook → Permissions.
+Add external collaborators’ emails and set appropriate access levels (e.g., "Can View").
+Security Benefits:
+No need to export data/notebooks (avoids uncontrolled copies).
+External users access notebooks securely via Databricks UI (no local storage).
+Why Other Options Are Incorrect?
+"Export and share via email":
+Insecure: Loses control over data once exported.
+"Shared secret key":
+Not a native Databricks feature; keys are hard to manage securely.
+"Managed Identity":
+Used for Azure AD authentication, not external notebook sharing.
+Key Takeaway:
+For secure collaboration:
+Use Workspace ACLs to invite external users with least-privilege access.
+For highly sensitive data, combine with Delta Lake ACLs or data masking.
+Pro Tip: For temporary access, set expiration dates on permissions (Enterprise-only feature).
+
+問題3-21
+Which of the following is NOT a hyperparameter in a machine learning algorithm?
+Choose only ONE best answer.
+Learning rate
+Regularization parameter
+Number of trees in a random forest
+正解
+Coefficients of a linear regression model
+Number of hidden layers in a neural network
+全体的な説明
+Correct Answer:
+Coefficients of a linear regression model
+Explanation:
+Why This Is Correct?
+Coefficients (or weights) in a linear regression model are learned parameters, not hyperparameters. They are optimized during training (e.g., via gradient descent) to minimize the loss function.
+Hyperparameters are set before training and control the learning process (e.g., learning rate, regularization strength).
+Key Differences:
+HyperparametersLearned ParametersSet by the data scientistLearned by the algorithmControl model behavior/trainingDefine the model’s predictionsExamples:Examples:- Learning rate- Linear regression coefficients- Number of trees in random forest- Neural network weights
+Why Other Options Are Incorrect?
+Learning rate: Hyperparameter (controls step size in optimization).
+Regularization parameter: Hyperparameter (adjusts penalty strength).
+Number of trees: Hyperparameter (set before training a random forest).
+Number of hidden layers: Hyperparameter (defines neural network architecture).
+Key Takeaway:
+Hyperparameters are configurations; parameters are learned from data. Always tune hyperparameters (e.g., via GridSearchCV), while parameters are optimized automatically.
+Pro Tip: Use MLflow to track hyperparameter tuning experiments!
+ドメイン
+ML Workflows
+
+問題3-22
+A data scientist is developing a recommendation system in Databricks using collaborative filtering. They have a user-item interaction DataFrame and want to train a model using the Alternating Least Squares (ALS) algorithm.
+What consideration is crucial for optimizing ALS performance?
+Increase the number of ALS iterations for better convergence.
+正解
+Tune the regularization parameter to control model complexity.
+Use a larger number of latent factors for improved model accuracy.
+Preprocess the data to handle missing values before applying ALS.
+全体的な説明
+Correct Answer:
+Tune the regularization parameter to control model complexity.
+Explanation:
+Why This Is Correct?
+Regularization (regParam in ALS) is critical because:
+It prevents overfitting by penalizing large values in the user/item latent factor matrices.
+Directly impacts the trade-off between bias and variance.
+Example in PySpark:
+from pyspark.ml.recommendation import ALS
+als = ALS(
+    regParam=0.1,  # Key hyperparameter to tune
+    rank=10,       # Latent factors
+    maxIter=10
+)
+model = als.fit(interaction_df)
+Impact of Regularization:
+Too high: Underfitting (oversimplified recommendations).
+Too low: Overfitting (noisy/sparse interactions dominate).
+Why Other Options Are Less Crucial?
+"Increase iterations": Helps convergence but secondary to regularization.
+"More latent factors": Improves accuracy but risks overfitting if not paired with proper regularization.
+"Handle missing values": ALS inherently handles missing data (implicit feedback).
+Key Takeaway:
+For ALS in collaborative filtering:
+Start with regParam tuning (e.g., via CrossValidator).
+Then adjust rank (latent factors) and maxIter.
+Pro Tip: Use implicitPrefs=True for implicit feedback datasets (e.g., clicks vs. ratings).
+
+問題3-23
+Which of the following describes the relationship between the native spark
+Dataframe and pandas API on spark Dataframe?
+Choose only ONE best answer.
+pandas API on Spark Dataframes are single-node versions of Spark Dataframe with
+additional metadata.
+pandas API on Spark Dataframes are un related to Spark Dataframes.
+pandas API on Spark Dataframes are less mutable versions of Spark Dataframes.
+pandas API on Spark Dataframes are more performant than Spark Dataframes.
+正解
+pandas API on Spark Dataframes are made up of Spark Dataframes and additional
+metadata.
+全体的な説明
+Correct Answer:
+pandas API on Spark Dataframes are made up of Spark Dataframes and additional metadata.
+Explanation:
+Why This Is Correct?
+pandas API on Spark (Koalas) is a wrapper around native Spark DataFrames, designed to mimic the pandas API while leveraging Spark’s distributed computing.
+It:
+Uses Spark DataFrames internally for storage and execution.
+Adds pandas-like syntax/metadata (e.g., index support, column labels).
+Example:
+import pyspark.pandas as ps
+ps_df = ps.DataFrame(spark_df)  # Converts Spark DF → pandas-on-Spark DF
+Key Relationship:
+Native Spark DataFramepandas-on-Spark DataFrameDistributed, no indexAdds pandas-style index/metadataUses Spark SQL optimizerMirrors pandas API (e.g., groupby)ImmutableImmutable (like Spark DF)
+Why Other Options Are Incorrect?
+"Single-node versions":
+Incorrect—pandas-on-Spark runs distributed like Spark.
+"Unrelated":
+They are directly related (pandas-on-Spark builds on Spark DF).
+"Less mutable":
+Both are immutable.
+"More performant":
+Performance is similar; pandas-on-Spark adds minor overhead for API compatibility.
+Key Takeaway:
+Use pandas-on-Spark for pandas-like syntax on distributed data, knowing it’s a Spark DataFrame under the hood.
+Pro Tip: Prefer native Spark DFs for complex ETL to avoid API translation costs.
+ドメイン
+Spark ML
+
+問題3-24
+What is a limitation of the client library for Feature Engineering in Unity Catalog and Feature Store?
+It can be run on any environment, including local environments.
+正解
+It does not support calling Feature Engineering in Unity Catalog or Feature Store APIs from a local environment or from an environment other than Databricks.
+It can only be run on local environments and does not support Databricks.
+It can only be run on Databricks Runtime for Machine Learning
+全体的な説明
+Correct Answer:
+It does not support calling Feature Engineering in Unity Catalog or Feature Store APIs from a local environment or from an environment other than Databricks.
+Explanation:
+Why This Is Correct?
+The client libraries for Feature Engineering in Unity Catalog and Feature Store are designed to work exclusively within the Databricks environment.
+Key limitations:
+No local execution: The clients require Databricks-specific infrastructure (e.g., DBFS, cluster context).
+Databricks-only APIs: Calls to FeatureEngineeringClient or FeatureStoreClient fail outside Databricks (e.g., on a local machine).
+Workarounds:
+For testing locally, use mock clients or Databricks Connect (limited support).
+Example of unsupported local usage:
+from databricks.feature_engineering import FeatureEngineeringClient
+fe = FeatureEngineeringClient()  # Fails outside Databricks
+Why Other Options Are Incorrect?
+"Run on any environment":
+False—Databricks-specific dependencies block local execution.
+"Only on local environments":
+The opposite is true; it’s Databricks-only.
+"Only on Databricks Runtime for ML":
+Works on all Databricks runtimes, not just ML.
+Key Takeaway:
+Use these clients only within Databricks. For hybrid workflows, leverage Databricks Jobs or MLflow deployments.
+Pro Tip: Test feature logic locally with pandas DataFrames, then switch to Databricks for integration.
+ドメイン
+Feature Store
+
+問題3-25
+How does SparkTrials log tuning results to MLflow, and what are the main and child runs in this context?
+SparkTrials logs all results to a single main run in MLflow
+Each trial is logged as a separate main run in MLflow
+正解
+The main run corresponds to fmin(), and each trial is logged as a child run under it in MLflow
+MLflow is not used for logging in SparkTrials
+全体的な説明
+Correct Answer:
+The main run corresponds to fmin(), and each trial is logged as a child run under it in MLflow.
+Explanation:
+Why This Is Correct?
+SparkTrials in Hyperopt organizes MLflow logging hierarchically:
+Main (parent) run: Represents the entire fmin() optimization process.
+Child runs: Each hyperparameter trial (distributed across Spark workers) is logged as a child under the main run.
+Benefits:
+Centralized view: Compare all trials in the MLflow UI under one parent.
+Traceability: Track which hyperparameters belong to which fmin() call.
+Example Workflow:
+from hyperopt import fmin, tpe, SparkTrials
+import mlflow
+# Main run (auto-created by SparkTrials)
+spark_trials = SparkTrials(parallelism=4)
+best = fmin(
+    fn=train_model,
+    space=search_space,
+    algo=tpe.suggest,
+    trials=spark_trials  # Logs to MLflow
+)
+MLflow UI: Shows 1 parent run with 4 child runs (one per trial).
+Why Other Options Are Incorrect?
+"Single main run":
+Incorrect—trials are logged as child runs, not merged.
+"Separate main runs":
+Trials are nested under fmin(), not independent.
+"MLflow not used":
+SparkTrials automatically integrates with MLflow.
+Key Takeaway:
+For distributed hyperparameter tuning:
+Use SparkTrials to parallelize trials.
+Check child runs in MLflow for per-trial metrics/artifacts.
+Pro Tip: Use mlflow.search_runs(parent_run_id=...) to analyze all child runs programmatically.
+ドメイン
+Hyperopt and SparkTrials
+
+問題3-26
+Scenario: You are working with two different DataFrames in Pandas API on Spark, and you encounter an error related to expensive operations. What option can you set to enable operations between these two DataFrames?
+display.max_rows
+正解
+compute.ops_on_diff_frames
+compute.default_index_type
+compute.shortcut_limit
+全体的な説明
+Correct Answer:
+compute.ops_on_diff_frames
+Explanation:
+Why This Is Correct?
+In pandas API on Spark, operations between DataFrames from different sources (e.g., different Spark plans) are disabled by default to avoid expensive joins/shuffles.
+Setting compute.ops_on_diff_frames=True overrides this safety check, allowing operations like:
+import pyspark.pandas as ps
+ps.set_option("compute.ops_on_diff_frames", True)  # Enable cross-DF ops
+df3 = df1 + df2  # Now works (but may trigger shuffles)
+Trade-off: Performance may degrade due to implicit joins.
+When to Use:
+Only for small DataFrames or debugging. For production, align DataFrames manually (e.g., join).
+Why Other Options Are Incorrect?
+display.max_rows: Controls how many rows to show (e.g., ps.set_option("display.max_rows", 10)).
+compute.default_index_type: Sets index type (e.g., "distributed" vs. "sequence").
+compute.shortcut_limit: Skips computation for small DataFrames (unrelated to cross-DF ops).
+Key Takeaway:
+Use compute.ops_on_diff_frames sparingly—it’s a debug tool, not a performance optimization. Prefer explicit joins:
+df3 = df1.join(df2, on="key").withColumn("sum", df1.value + df2.value)  # Efficient
+Pro Tip: Reset to False afterward:
+ps.reset_option("compute.ops_on_diff_frames")  # Re-enable safety checks
+ドメイン
+Pandas API on Spark
+
+問題3-27
+Scenario: You want to limit the number of rows displayed when printing various outputs in Pandas API on Spark. Which option should you use?
+plotting.max_rows
+compute.default_index_cache
+正解
+display.max_rows
+compute.ops_on_diff_frames
+全体的な説明
+The answer is C. display.max_rows.
+Explanation:
+display.max_rows is a configuration option specifically designed to control the maximum number of rows shown when printing DataFrames or Series in the Pandas API on Spark.
+It's essential for managing output readability and preventing overwhelming amounts of data from being displayed, especially when working with large datasets.
+Incorrect Options:
+A. plotting.max_rows: This option is related to limiting the number of rows displayed in plots, not general output.
+B. compute.default_index_cache: This option controls caching behavior for indexes, not output display.
+D. compute.ops_on_diff_frames: This option manages operations on different DataFrames, not output display.
+How to Use display.max_rows:
+Import:
+Python
+from pyspark.pandas import config
+Set Maximum Rows:
+Python
+config.set_option("display.max_rows", 10)  # Set to 10 rows for example
+Print Output:
+Python
+df = spark.createDataFrame([(1, "a"), (2, "b"), (3, "c"), (4, "d")], ["id", "value"])
+print(df)  # Will now display only 10 rows
+Key Points:
+Use display.max_rows to control output verbosity in Pandas API on Spark.
+Adjust the value based on your dataset size and desired level of detail.
+Remember to import the config module for configuration access.
+ドメイン
+Pandas API on Spark
+
+問題3-28
+Which Databricks tool provides support for end-to-end machine learning lifecycle management?
+正解
+MLflow
+Databricks Jobs
+Databricks Runtime
+AutoML
+全体的な説明
+Correct Answer:
+MLflow
+Explanation:
+Why This Is Correct?
+MLflow is Databricks' open-source platform for managing the entire ML lifecycle, including:
+Experiment Tracking: Log parameters, metrics, and models (mlflow.start_run(), mlflow.log_metric()).
+Model Registry: Version, stage, and deploy models (mlflow.register_model()).
+Projects: Package and reproduce runs (mlflow.projects.run()).
+Model Serving: Deploy as REST APIs (mlflow models serve).
+Example Workflow:
+import mlflow
+# Track experiment
+with mlflow.start_run():
+    mlflow.log_param("learning_rate", 0.01)
+    model = train_model()
+    mlflow.sklearn.log_model(model, "model")
+# Register model
+mlflow.register_model("runs:/<run_id>/model", "prod_model")
+Why Other Options Are Incorrect?
+Databricks Jobs:
+Schedules/automates scripts (e.g., ETL), but lacks ML-specific tracking.
+Databricks Runtime:
+Provides pre-installed ML libraries (e.g., TensorFlow), not lifecycle tools.
+AutoML:
+Automates model training, but doesn’t manage deployment or tracking.
+Key Takeaway:
+For end-to-end ML lifecycle (experiment → production), use MLflow. Integrate with Databricks Jobs for scheduling and Runtime for execution.
+Pro Tip: Use MLflow Pipelines (GA in 2023) for standardized MLOps workflows.
+ドメイン
+Databricks ML
+
+問題3-29
+A data scientist is using Databricks for exploratory data analysis (EDA) and wants to visualize the distribution of a numerical feature across different categories.
+What Databricks library or tool would be most suitable for creating such visualizations?
+Matplotlib.
+正解
+Databricks Display function.
+MLlib CrossValidator.
+Databricks Delta.
+全体的な説明
+Correct Answer:
+Databricks Display function
+Explanation:
+Why This Is Correct?
+The display() function in Databricks notebooks is optimized for quick, interactive visualizations during EDA. It:
+Supports built-in charts (histograms, box plots, bar charts) with one click.
+Handles large datasets efficiently by sampling or aggregating data.
+Allows grouping by categories (e.g., distribution of a numerical feature per category).
+Example:
+df = spark.sql("SELECT category, numerical_feature FROM data")
+display(df)  # Use the chart icon to plot distributions by category
+Key Advantages Over Other Options:
+No code for basic plots (vs. Matplotlib coding overhead).
+Integrated with Databricks (vs. external libraries).
+Scalable for big data (vs. Matplotlib struggles with large DataFrames).
+Why Other Options Are Incorrect?
+Matplotlib:
+Requires manual coding; less efficient for big data.
+MLlib CrossValidator:
+For hyperparameter tuning, not visualization.
+Databricks Delta:
+Storage format, not a visualization tool.
+Key Takeaway:
+For quick, scalable EDA visualizations in Databricks:
+Use display(df) for interactive charts.
+For custom plots, pair with Seaborn/Plotly (but expect slower performance on big data).
+Pro Tip: Use display’s groupBy option to split distributions by categories:
+display(df.groupBy("category"))  # Auto-generates category-wise plots
+
+問題3-30
+What is the key difference between DataFrame.pandas_on_spark.transform_batch() and DataFrame.pandas_on_spark.apply_batch()?
+transform_batch and apply_batch are interchangeable.
+正解
+transform_batch requires the length of input and output to be the same, while apply_batch does not have this restriction.
+apply_batch requires the length of input and output to be the same, while transform_batch does not have this restriction.
+Both transform_batch and apply_batch have the same length restriction.
+全体的な説明
+Correct Answer:
+transform_batch requires the length of input and output to be the same, while apply_batch does not have this restriction.
+Explanation:
+Why This Is Correct?
+transform_batch():
+Input/Output Length Must Match: The function must return a DataFrame/Series with the same number of rows as the input. Ideal for row-wise transformations (e.g., scaling, filtering).
+Example:
+def scale(df):
+    return df * 2  # Output length = input length
+df.pandas_on_spark.transform_batch(scale)
+apply_batch():
+Flexible Output Length: Can return a DataFrame/Series of any size (e.g., aggregations, group-wise stats).
+Example:
+def summary(df):
+    return df.mean()  # Output length ≠ input length (aggregation)
+df.pandas_on_spark.apply_batch(summary)
+Key Difference:
+MethodInput/Output LengthUse Casetransform_batchMust matchRow-wise operationsapply_batchCan differAggregations, summaries
+Why Other Options Are Incorrect?
+"Interchangeable":
+They serve different purposes (fixed vs. flexible output size).
+"apply_batch has length restriction":
+Incorrect—apply_batch allows variable output.
+"Same restriction":
+False—only transform_batch enforces length matching.
+Key Takeaway:
+Use transform_batch for 1:1 row transformations.
+Use apply_batch for aggregations or variable-length outputs.
+Pro Tip: For grouped operations, combine with groupby.apply_batch().
+ドメイン
+Pandas API on Spark
+
+問題3-31
+Your team is working on a machine learning project that involves processing large volumes of data in a distributed computing environment. What is a key consideration for optimizing data processing efficiency in this scenario?
+Minimizing Data Storage
+Maximizing Data Replication
+正解
+Reducing Data Transfer Between Nodes
+Increasing Data Complexity
+全体的な説明
+Correct Answer:
+Reducing Data Transfer Between Nodes
+Explanation:
+Why This Is Correct?
+In distributed computing (e.g., Spark), data transfer (shuffling) between nodes is the primary bottleneck. Optimizations include:
+Partitioning: Use repartition() or coalesce() to align data with worker nodes.
+Broadcast Variables: For small datasets (spark.sparkContext.broadcast()).
+Avoid Skew: Balance data distribution to prevent overloaded nodes.
+Example:
+# Minimize shuffle by pre-partitioning
+df = df.repartition(100, "user_id")  # Evenly distribute by key
+Impact on Performance:
+Less shuffling → faster execution and lower network overhead.
+Why Other Options Are Incorrect?
+Minimizing Storage:
+Less critical than transfer (storage is cheap; network I/O is expensive).
+Maximizing Replication:
+Increases storage and transfer costs (anti-pattern).
+Increasing Complexity:
+Makes optimization harder (simplicity boosts efficiency).
+Key Takeaway:
+For distributed ML efficiency:
+Minimize shuffles (use join strategies wisely).
+Leverage caching (df.cache()) for reused DataFrames.
+Monitor Spark UI for shuffle/transfer metrics.
+Pro Tip: Use Delta Lake for optimized file organization (Z-ordering, compaction).
+ドメイン
+Scaling ML Models
+
+問題3-32
+In a distributed computing system, what does task fusion involve?
+正解
+Combining Small Tasks into Larger Tasks
+Breaking Down Large Tasks into Smaller Subtasks
+Distributing Tasks Across Nodes
+Synchronizing Task Execution
+全体的な説明
+Correct Answer:
+Combining Small Tasks into Larger Tasks
+Explanation:
+Why This Is Correct?
+Task fusion in distributed systems (e.g., Apache Spark) refers to merging small, dependent tasks into larger ones to:
+Reduce scheduling overhead: Fewer tasks to manage.
+Minimize data shuffling: Intermediate results stay local.
+Improve CPU/memory locality: Sequential operations execute together.
+Example:
+Spark fuses adjacent narrow transformations (e.g., map → filter) into a single stage.
+Key Benefit:
+Faster execution by avoiding redundant task launches and data transfers.
+Why Other Options Are Incorrect?
+Breaking down tasks:
+This is task decomposition (opposite of fusion).
+Distributing tasks:
+Refers to task parallelism, not fusion.
+Synchronizing tasks:
+Ensures consistency but doesn’t merge tasks.
+Key Takeaway:
+Task fusion is a core optimization in Spark. Enable it via:
+spark.conf.set("spark.default.parallelism", "auto")  # Optimizes fusion
+Pro Tip: Use Spark UI to inspect fused stages in the DAG visualization.
+ドメイン
+Scaling ML Models
+
+問題3-33
+Your team is designing a machine learning model that requires processing unstructured textual data in a distributed computing environment. Which technique allows efficient indexing and retrieval of textual data for analysis?
+Textual Clustering
+正解
+Textual Indexing
+Textual Partitioning
+Textual Compression
+全体的な説明
+Correct Answer:
+Textual Indexing
+Explanation:
+Why This Is Correct?
+Textual indexing (e.g., using inverted indexes or TF-IDF vectors) is the most efficient method for:
+Fast retrieval: Enables quick lookup of terms (like a book index).
+Distributed processing: Scales via frameworks like Apache Lucene or Spark MLlib’s CountVectorizer.
+Example in Spark:
+from pyspark.ml.feature import CountVectorizer
+# Create an index of term frequencies
+vectorizer = CountVectorizer(inputCol="text", outputCol="features")
+model = vectorizer.fit(text_df)  # Builds the index
+indexed_df = model.transform(text_df)
+Key Advantages:
+Supports queries: Search for specific terms or phrases.
+Works with NLP pipelines: Feeds into models like LDA or word2vec.
+Why Other Options Are Incorrect?
+Textual clustering:
+Groups similar texts (e.g., topic modeling) but doesn’t optimize retrieval.
+Textual partitioning:
+Splits data physically (e.g., by document ID) but doesn’t enable term-level search.
+Textual compression:
+Reduces storage but hinders direct analysis (requires decompression).
+Key Takeaway:
+For scalable text processing:
+Index text (e.g., TF-IDF, BM25).
+Use distributed search (Elasticsearch/Solr for production).
+Integrate with Spark NLP for advanced pipelines.
+Pro Tip: For low-latency retrieval, pre-index with Delta Lake + Z-ordering on key terms.
+ドメイン
+Scaling ML Models
+
+問題3-34
+Your team is working on a machine learning project involving large-scale datasets. Which technique, supported by Databricks MLlib, can help you efficiently sample and process the data for model training?
+Data Imputation
+正解
+Stratified Sampling
+Outlier Detection
+Feature Scaling
+全体的な説明
+Correct Answer:
+Stratified Sampling
+Explanation:
+Why This Is Correct?
+Stratified sampling in Spark MLlib (DataFrame.stat.sampleBy()) ensures representative subsets by:
+Preserving class ratios: Critical for imbalanced datasets.
+Distributed efficiency: Scales to large datasets via Spark.
+Example:
+from pyspark.sql.functions import col
+# Sample 10% of each class
+fractions = {"class_A": 0.1, "class_B": 0.1}
+sampled_df = df.stat.sampleBy("label", fractions, seed=42)
+Key Benefits:
+Avoids bias: Maintains original distribution.
+Reduces compute costs: Smaller training sets without losing signal.
+Why Other Options Are Incorrect?
+Data imputation:
+Handles missing values but doesn’t reduce data size.
+Outlier detection:
+Identifies anomalies but doesn’t sample.
+Feature scaling:
+Normalizes values (e.g., MinMaxScaler) but doesn’t subset data.
+Key Takeaway:
+For large-scale ML:
+Use stratified sampling to create manageable, balanced datasets.
+Pair with MLlib’s CrossValidator for robust evaluation.
+Pro Tip: For time-series data, use time-based sampling (e.g., df.filter("date <= '2023-01-01'")).
+ドメイン
+Model Training and Tuning
+
+問題3-35
+A data scientist is working on a Databricks notebook that involves extensive feature engineering, including the creation of new columns and transformations. They want to encapsulate this feature engineering logic into a reusable component.
+What is the recommended approach to achieve this?
+Define a custom PySpark UDF (User-Defined Function) and apply it to the DataFrame.
+正解
+Create a Spark MLlib Transformer class for the feature engineering logic.
+Use the map function to apply the feature engineering transformations.
+Save the intermediate DataFrame and load it in other notebooks as needed.
+全体的な説明
+Correct Answer:
+Create a Spark MLlib Transformer class for the feature engineering logic.
+Explanation:
+Why This Is Correct?
+Spark MLlib Transformers are the standard, reusable way to encapsulate feature engineering logic. They:
+Integrate seamlessly with Spark ML Pipelines.
+Can be saved/loaded (e.g., via save()/load()).
+Support distributed execution.
+Example:
+from pyspark.ml import Transformer
+from pyspark.sql.functions import log
+class LogTransformer(Transformer):
+    def _transform(self, df):
+        return df.withColumn("log_feature", log(df["feature"]))
+# Usage
+log_transformer = LogTransformer()
+transformed_df = log_transformer.transform(input_df)
+Key Benefits:
+Reusability: Apply the same logic across notebooks/jobs.
+Testability: Unit test the Transformer independently.
+Pipeline Compatibility: Combine with VectorAssembler, StandardScaler, etc.
+Why Other Options Are Incorrect?
+Custom UDF:
+Less efficient (Python-Serialization overhead) and harder to reuse.
+map function:
+Forces data to Python (slow) and breaks DataFrame optimizations.
+Save/Load DataFrame:
+Doesn’t encapsulate logic—just caches data.
+Key Takeaway:
+For production-grade feature engineering:
+Write custom Transformers for complex logic.
+Chain them in Pipelines (Pipeline.fit()/transform()).
+Save Pipelines for deployment.
+Pro Tip: Use @keyword_only in Transformers for MLflow-compatible parameter logging.
+
+問題3-36
+In the new style of type hinting in pandas API on Spark, how are Series names specified in the return type?
+As a list of strings.
+As a dictionary.
+正解
+As a string, followed by the type.
+Series names are not specified in the return type
+全体的な説明
+Correct Answer:
+As a string, followed by the type.
+Explanation:
+Why This Is Correct?
+In pandas API on Spark, the new type hinting style (PEP 484) specifies Series names and types using the format:
+def function() -> ps.Series["name", dtype]:
+"name": The Series name as a string literal.
+dtype: The data type (e.g., int, float).
+Example:
+import pyspark.pandas as ps
+def square(x: ps.Series["value", float]) -> ps.Series["squared_value", float]:
+    return x ** 2
+Key Features:
+Explicit Naming: Ensures consistency between expected and actual column names.
+Type Safety: Static checkers (e.g., mypy) validate types.
+Why Other Options Are Incorrect?
+List of strings:
+Used for DataFrame column names, not Series.
+Dictionary:
+No such syntax in pandas-on-Spark type hints.
+Not specified:
+Possible but defeats the purpose of type hints.
+Key Takeaway:
+For type-hinted Series in pandas-on-Spark:
+Use Series["name", dtype].
+Pair with DataFrame[{"col": dtype}] for full type safety.
+Pro Tip: Enable mypy to catch type mismatches early.
+ドメイン
+Pandas API on Spark
+
+問題3-37
+What is the purpose of the import_notebook function in the Databricks AutoML API?
+To start an AutoML run with a custom notebook.
+正解
+To import a trial notebook saved as an MLflow artifact into the workspace.
+To export a notebook generated during an AutoML run.
+To register and deploy a model in the MLflow model registry.
+全体的な説明
+Correct Answer:
+To import a trial notebook saved as an MLflow artifact into the workspace.
+Explanation:
+Why This Is Correct?
+import_notebook in Databricks AutoML is used to retrieve and load trial notebooks generated during an AutoML experiment. These notebooks:
+Are saved as MLflow artifacts under the experiment run.
+Contain the full code for a specific model trial (hyperparameters, preprocessing steps).
+Example:
+from databricks import automl
+automl.import_notebook(
+    run_id="123",  # MLflow run ID of the trial
+    target_path="/Shared/automl_trial"  # Workspace path to save the notebook
+)
+Key Use Cases:
+Debugging: Inspect why a specific trial performed well/poorly.
+Customization: Modify and reuse AutoML-generated code.
+Why Other Options Are Incorrect?
+"Start AutoML with a custom notebook":
+AutoML runs are initiated via automl.classify()/regress(), not import_notebook.
+"Export a notebook":
+Notebooks are auto-exported as artifacts; import_notebook fetches them.
+"Register/deploy a model":
+Done via mlflow.register_model(), unrelated to notebooks.
+Key Takeaway:
+Use import_notebook to explore or extend AutoML trials. Combine with MLflow UI to identify high-performing runs.
+Pro Tip: For production, log custom notebooks as Repo Files in Databricks for version control.
+ドメイン
+AutoML
+
+問題3-38
+Your team is optimizing Spark performance for a machine learning project. What technique involves precomputing and storing intermediate results to reduce computational overhead during subsequent tasks?
+Lazy Evaluation
+正解
+Result Caching
+Task Fusion
+Data Compression
+全体的な説明
+Correct Answer:
+Result Caching
+Explanation:
+Why This Is Correct?
+Result caching (via df.cache() or df.persist()) stores intermediate DataFrames/RDDs in memory or disk to avoid recomputation in subsequent actions.
+Key Benefits:
+Reduces CPU overhead: Reuses precomputed results.
+Speeds up iterative workflows: Common in ML (e.g., feature engineering loops).
+Example:
+df = spark.read.parquet("data.parquet").cache()  # Cache after load
+df.count()  # Materializes the cache
+When to Use:
+Reused DataFrames: If a DataFrame is accessed multiple times.
+Small, frequently queried tables: Dimension tables in star schemas.
+Why Other Options Are Incorrect?
+Lazy Evaluation:
+Defers computation until an action is called (e.g., count()), but doesn’t store results.
+Task Fusion:
+Combines small tasks to reduce scheduling overhead (no storage).
+Data Compression:
+Reduces storage size but doesn’t avoid recomputation.
+Key Takeaway:
+For ML performance:
+Cache feature-engineered DataFrames.
+Monitor storage levels (StorageLevel.MEMORY_AND_DISK for large DataFrames).
+Unpersist (df.unpersist()) when done to free resources.
+Pro Tip: Use explain() to verify cache hits in Spark’s execution plan.
+ドメイン
+Scaling ML Models
+
+問題3-39
+A senior data scientist is working on a machine learning project using MLflow. They want to implement a feature that allows for model explanations and interpretability.
+Which MLflow component or library should they use for model interpretation?
+mlflow.sklearn
+正解
+mlflow.shap
+mlflow.pytorch
+mlflow.tensorflow
+全体的な説明
+Correct Answer:
+mlflow.shap
+Explanation:
+Why This Is Correct?
+mlflow.shap is MLflow’s built-in integration with SHAP (SHapley Additive exPlanations), a leading library for model interpretability. It:
+Generates feature importance scores (global interpretability).
+Produces local explanations (per-prediction reasoning).
+Logs visualizations (e.g., force plots, summary plots) as MLflow artifacts.
+Example:
+import mlflow.shap
+import shap
+# Train model
+model = train_model(X_train, y_train)
+# Log SHAP summary
+explainer = shap.Explainer(model)
+shap_values = explainer(X_test)
+mlflow.shap.log_explanation(explainer, X_test)
+Key Features:
+Unified Tracking: SHAP outputs appear in the MLflow UI under the run’s artifacts.
+Model-Agnostic: Works with sklearn, PyTorch, TensorFlow, etc.
+Why Other Options Are Incorrect?
+mlflow.sklearn/mlflow.pytorch/mlflow.tensorflow:
+These log models and metrics, but not explanations.
+Key Takeaway:
+For model interpretability in MLflow:
+Use mlflow.shap for SHAP-based explanations.
+For non-SHAP methods (e.g., LIME), log custom plots via mlflow.log_artifact().
+Pro Tip: Compare explanations across runs using MLflow’s artifact diff view.
+ドメイン
+Databricks ML
+
+問題3-40
+What role does the identity_col parameter play in multi-series forecasting?
+It sets the frequency of the time series.
+It identifies the time column for forecasting.
+It specifies the primary key column for feature lookup.
+正解
+It identifies the time series for multi-series forecasting.
+全体的な説明
+Correct Answer:
+It identifies the time series for multi-series forecasting.
+Explanation:
+Why This Is Correct?
+In multi-series forecasting (e.g., predicting sales for multiple products/stores), the identity_col parameter:
+Uniquely identifies each time series (e.g., product_id, store_id).
+Enables the model to train on multiple series simultaneously while preserving their distinct patterns.
+Example (Databricks AutoML):
+from databricks import automl
+automl.forecast(
+    df=df,
+    time_col="date",
+    target_col="sales",
+    identity_col="product_id"  # Groups data by product
+)
+Key Impact:
+Without identity_col, the model treats all data as a single series, losing group-specific trends.
+Why Other Options Are Incorrect?
+"Sets frequency":
+Controlled by frequency (e.g., freq="D" for daily).
+"Identifies time column":
+This is the role of time_col.
+"Primary key for feature lookup":
+Feature lookup uses keys like feature_store_key, not identity_col.
+Key Takeaway:
+For multi-series forecasting:
+Use identity_col to group series (e.g., by product, region).
+Combine with time_col and target_col for full configuration.
+Pro Tip: Ensure identity_col has low cardinality (e.g., 10s-100s of groups) for optimal performance.
+ドメイン
+Feature Store
+
+問題3-41
+You are tasked with training a classification model using Databricks AutoML. The dataset you are working with has several columns, but some of them are irrelevant to the classification task. Which parameter would you use to exclude specific columns during AutoML calculations?
+target_col
+正解
+exclude_cols
+max_trials
+pos_label
+全体的な説明
+Correct Answer:
+exclude_cols
+Explanation:
+Why This Is Correct?
+The exclude_cols parameter in Databricks AutoML explicitly lists columns to ignore during model training. This:
+Removes noise: Excludes irrelevant features (e.g., IDs, timestamps).
+Improves efficiency: Reduces computation time and memory usage.
+Example:
+from databricks import automl
+automl.classify(
+    dataset=df,
+    target_col="label",
+    exclude_cols=["id", "timestamp"]  # Columns to ignore
+)
+Key Benefit:
+Ensures AutoML focuses only on predictive features, avoiding bias from irrelevant data.
+Why Other Options Are Incorrect?
+target_col:
+Specifies the label column, not columns to exclude.
+max_trials:
+Controls the number of hyperparameter trials, not feature selection.
+pos_label:
+Defines the positive class in binary classification (unrelated to column exclusion).
+Key Takeaway:
+For clean AutoML runs:
+Use exclude_cols to drop non-predictive columns.
+Combine with feature_store_lookups to include external features.
+Pro Tip: Pre-inspect data with df.display() to identify irrelevant columns.
+ドメイン
+AutoML
+
+問題3-42
+A data scientist is training a machine learning model using Spark MLlib in a Databricks notebook. They want to save the trained model to the Databricks MLflow tracking server for future reference.
+Which code snippet should they use?
+mlflow.log_model(trained_model, "model")
+正解
+mlflow.start_run()
+mlflow.spark.log_model(trained_model, "model")
+mlflow.end_run()
+mlflow.spark.save_model(trained_model, "model")
+mlflow.spark.logModel(trained_model, "model")
+全体的な説明
+Correct Answer:
+mlflow.start_run()
+mlflow.spark.log_model(trained_model, "model")
+mlflow.end_run()
+Explanation:
+Why This Is Correct?
+mlflow.spark.log_model() is the correct method to log a Spark MLlib model to the MLflow tracking server. It:
+Saves the model as an MLflow artifact.
+Records metadata (e.g., Spark version, model type).
+Requires an active MLflow run (hence start_run()/end_run()).
+Example:
+from pyspark.ml import Pipeline
+from pyspark.ml.classification import LogisticRegression
+import mlflow
+# Train a Spark ML model
+lr = LogisticRegression()
+pipeline = Pipeline(stages=[lr])
+model = pipeline.fit(train_df)
+# Log to MLflow
+with mlflow.start_run():
+    mlflow.spark.log_model(model, "spark-model")
+Key Features:
+Reproducibility: Logs all dependencies (Python/Spark versions).
+Deployment-ready: Can be loaded later via mlflow.spark.load_model().
+Why Other Options Are Incorrect?
+mlflow.log_model():
+Generic but not optimized for Spark MLlib (lacks Spark-specific metadata).
+mlflow.spark.save_model():
+Saves to disk but does not log to the tracking server.
+mlflow.spark.logModel():
+Incorrect syntax (case-sensitive; correct is log_model).
+Key Takeaway:
+For Spark MLlib + MLflow:
+Use mlflow.spark.log_model() within a run context.
+For non-Spark models, use mlflow.sklearn.log_model() or equivalent.
+Pro Tip: Add registered_model_name to auto-register the model in MLflow Model Registry.
+
+問題3-43
+What is the primary role of an activation function in neural networks used in Spark ML?
+To initialize weights
+To determine the learning rate
+To add complexity to the model
+正解
+To introduce non-linearity in the model
+全体的な説明
+Correct Answer:
+To introduce non-linearity in the model
+Explanation:
+Why This Is Correct?
+Activation functions (e.g., ReLU, Sigmoid, Tanh) are essential in neural networks because they:
+Introduce non-linearity, enabling the network to learn complex patterns (without them, the network would just be a linear regression model).
+Control neuron output: Decide whether a neuron should "fire" (pass information to the next layer).
+Example in Spark ML (MultilayerPerceptron):
+from pyspark.ml.classification import MultilayerPerceptronClassifier
+layers = [4, 5, 3]  # Input, hidden, output layers
+mlp = MultilayerPerceptronClassifier(layers=layers, activation="relu")
+Here, activation="relu" adds non-linearity between layers.
+Key Impact:
+Non-linearity allows the network to approximate any function (Universal Approximation Theorem).
+Why Other Options Are Incorrect?
+"Initialize weights":
+Done by weight initialization schemes (e.g., Xavier, He), not activation functions.
+"Determine learning rate":
+Controlled by the optimizer (e.g., Adam, SGD).
+"Add complexity":
+Partial truth, but the primary role is enabling non-linearity.
+Key Takeaway:
+For effective neural networks in Spark ML:
+Use ReLU (default) for hidden layers (fast, avoids vanishing gradients).
+Use Softmax for multi-class output layers.
+Avoid linear activations (e.g., identity) except for regression.
+Pro Tip: Monitor dead neurons (ReLU outputs 0) with Spark UI during training.
+ドメイン
+Spark ML Algorithms
+
+問題3-44
+Your machine learning project involves handling imbalanced classes in the dataset. Which technique, supported by Databricks MLlib, can help you address class imbalance for more accurate model training?
+正解
+Class Weighting
+Feature Scaling
+Data Augmentation
+Outlier Detection
+全体的な説明
+Correct Answer:
+Class Weighting
+Explanation:
+Why This Is Correct?
+Class weighting in Spark MLlib (e.g., weightCol or classWeight) adjusts the loss function to penalize misclassifications of minority classes more heavily. This:
+Balances the influence of each class during training.
+Requires no data duplication or synthesis (unlike oversampling).
+Example:
+from pyspark.ml.classification import LogisticRegression
+# Add weights to the DataFrame
+balanced_df = df.withColumn("weight", when(df["label"] == 1, 5.0).otherwise(1.0))
+# Train with weights
+lr = LogisticRegression(weightCol="weight")
+model = lr.fit(balanced_df)
+Key Benefits:
+No data modification: Preserves original dataset size.
+Native Spark support: Efficient for large datasets.
+Why Other Options Are Incorrect?
+Feature Scaling:
+Normalizes features (e.g., MinMaxScaler) but doesn’t address class imbalance.
+Data Augmentation:
+Creates synthetic samples (e.g., SMOTE) but isn’t natively supported in Spark MLlib.
+Outlier Detection:
+Identifies anomalies, unrelated to class balance.
+Key Takeaway:
+For imbalanced data in Spark ML:
+Use weightCol in classifiers (LogisticRegression, RandomForest).
+For severe imbalance, combine with oversampling (custom PySpark code).
+Pro Tip: Compute weights automatically via classWeight="balanced" in Spark 3.0+.
+ドメイン
+Model Training and Tuning
+
+問題3-45
+A machine learning engineer is managing a large number of experiments in MLflow and wants to organize them efficiently. They want to create a hierarchical structure to group related experiments.
+What MLflow feature should they use for this purpose?
+mlflow.create_experiment
+mlflow.log_param
+正解
+mlflow.set_experiment
+mlflow.start_run
+全体的な説明
+Correct Answer:
+mlflow.set_experiment
+✅ Explanation:
+In MLflow, mlflow.set_experiment() is used to organize experiments into a structured, hierarchical format. It allows the machine learning engineer to group related runs under a specific experiment name, making it easier to manage and compare multiple experiments.
+When an experiment is set using mlflow.set_experiment("experiment_name"), all subsequent MLflow runs are logged under that specific experiment. This is useful when dealing with multiple models, hyperparameter tuning, or tracking experiments across different datasets.
+Example Usage: Organizing Experiments in MLflow
+import mlflow
+# Set the experiment to group related runs
+mlflow.set_experiment("fraud_detection_experiment")
+# Start an MLflow run
+with mlflow.start_run():
+    mlflow.log_param("learning_rate", 0.01)
+    mlflow.log_metric("accuracy", 0.92)
+This ensures that all runs under "fraud_detection_experiment" are grouped together in MLflow.
+You can later compare different runs under this experiment in the MLflow UI.
+❌ Why Other Options Are Incorrect:
+mlflow.create_experiment
+❌ Incorrect:
+This function is used to create a new MLflow experiment programmatically but does not set the active experiment for logging runs.
+Example usage:
+experiment_id = mlflow.create_experiment("new_experiment")
+However, the runs will not be automatically assigned to this experiment unless mlflow.set_experiment() is used.
+mlflow.log_param
+❌ Incorrect:
+mlflow.log_param() is used to log hyperparameters for a specific run but does not organize experiments.
+Example usage:
+mlflow.log_param("batch_size", 32)
+This helps track hyperparameters within a run but does not affect experiment grouping.
+mlflow.start_run
+❌ Incorrect:
+mlflow.start_run() starts an individual MLflow run but does not assign it to an experiment unless mlflow.set_experiment() is used.
+Example:
+mlflow.start_run()  # Just starts a run but doesn’t set the experiment
+If no experiment is explicitly set, the run will be logged under "Default" experiment, making it harder to organize multiple related runs.
+✅ Final Takeaway:
+To efficiently organize and manage multiple MLflow runs under a structured experiment, use mlflow.set_experiment("experiment_name") before starting runs.
+
+問題3-46
+In a regression AutoML task, you want to customize the metric used for evaluating and ranking model performance. Which parameter allows you to specify the primary metric?
+正解
+primary_metric
+time_col
+exclude_cols
+max_trials
+全体的な説明
+Correct Answer:
+primary_metric
+Explanation:
+Why This Is Correct?
+The primary_metric parameter in Databricks AutoML explicitly defines the evaluation metric used to rank models during training.
+Supported regression metrics include:
+rmse (Root Mean Squared Error)
+mse (Mean Squared Error)
+r2 (R-squared)
+mae (Mean Absolute Error)
+Example:
+from databricks import automl
+automl.regress(
+    dataset=df,
+    target_col="price",
+    primary_metric="rmse"  # Optimize for lowest RMSE
+)
+Key Impact:
+Determines which model version is flagged as "best" in the AutoML leaderboard.
+Why Other Options Are Incorrect?
+time_col:
+Specifies the timestamp column for time-series forecasting, not metric selection.
+exclude_cols:
+Lists columns to ignore during training.
+max_trials:
+Controls the number of hyperparameter trials, not the metric.
+Key Takeaway:
+For customized regression evaluation:
+Set primary_metric to match your business goal (e.g., mae for robust outliers).
+Review leaderboard metrics in the AutoML UI (display(automl_results)).
+Pro Tip: Use eval_metrics in the AutoML output to compare all metrics side-by-side.
+ドメイン
+AutoML
+
+問題3-47
+Your machine learning model is underfitting the training data, indicating that it lacks complexity. Which approach, supported by Databricks MLlib, would you employ to address underfitting?
+正解
+Increase Model Complexity
+Decrease Model Complexity
+Increase Regularization
+Decrease Regularization
+全体的な説明
+Correct Answer:
+Increase Model Complexity
+Explanation:
+Why This Is Correct?
+Underfitting occurs when a model is too simple to capture patterns in the data. To address this:
+Increase complexity by:
+Using a more powerful algorithm (e.g., switch from linear regression to random forest).
+Adding more features or interaction terms.
+Reducing regularization (e.g., lower regParam in Spark MLlib).
+Example in Spark MLlib:
+from pyspark.ml.classification import RandomForestClassifier
+rf = RandomForestClassifier(
+    numTrees=100,  # More trees = more complex
+    maxDepth=10    # Deeper trees = more complex
+)
+Key Benefit:
+Higher complexity helps the model fit the training data better (but monitor for overfitting).
+Why Other Options Are Incorrect?
+Decrease complexity:
+Worsens underfitting (already too simple).
+Increase regularization:
+Further restricts model capacity (e.g., higher regParam shrinks coefficients).
+Decrease regularization:
+Helps (a subset of increasing complexity), but less direct than other methods.
+Key Takeaway:
+For underfitting in Spark MLlib:
+Boost complexity:
+Add trees (numTrees), depth (maxDepth), or features.
+Switch to non-linear models (e.g., GBT, neural nets).
+Validate: Check if test performance improves (avoid overfitting).
+Pro Tip: Use CrossValidator to automate complexity tuning.
+ドメイン
+ML Workflows
+
+問題3-48
+A data engineering team is using Databricks to write data to a Delta table named "sensor_readings." They want to ensure that any duplicate records based on a specific key column are removed before writing to the table.
+Which code snippet should they use?
+sensor_readings.distinct().write.format("delta").mode("overwrite").saveAsTable("sensor_readings")
+正解
+sensor_readings.dropDuplicates("key_column").write.format("delta").mode("append").saveAsTable("sensor_readings")
+spark.sql("SELECT DISTINCT * FROM sensor_readings").write.format("delta").mode("overwrite").saveAsTable("sensor_readings")
+sensor_readings.write.format("delta").mode("upsert").option("key_column", "value").save()
+全体的な説明
+Correct Answer:
+sensor_readings.dropDuplicates("key_column").write.format("delta").mode("append").saveAsTable("sensor_readings")
+Explanation:
+Why This Is Correct?
+dropDuplicates("key_column") ensures only unique records (based on key_column) are written.
+mode("append") adds new records without deleting existing data (unlike overwrite).
+Delta Lake automatically handles ACID transactions and schema enforcement.
+Key Benefits:
+Efficiency: Processes duplicates in a distributed manner.
+Idempotence: Safe for retries (no duplicate inserts).
+Why Other Options Are Incorrect?
+distinct():
+Removes all duplicate rows (not just by a key column).
+SQL DISTINCT:
+Similar to distinct() but less explicit about the key.
+upsert:
+Not a valid Delta write mode (use merge for upserts).
+Key Takeaway:
+For deduplication in Delta Lake:
+Use dropDuplicates(["key_column"]) for precise control.
+Prefer append to preserve existing data.
+Pro Tip: For large datasets, optimize with OPTIMIZE sensor_readings ZORDER BY key_column
+
+問題3-49
+What does AutoML perform and record during its process?
+It performs manual data preparation.
+It records summary statistics only.
+正解
+It records a set of trials that creates, tunes, and evaluates multiple models.
+It records a single trial for model evaluation.
+全体的な説明
+Correct Answer:
+It records a set of trials that creates, tunes, and evaluates multiple models.
+Explanation:
+Why This Is Correct?
+Databricks AutoML automates the end-to-end ML workflow by:
+Generating multiple trials: Each trial trains a different model (e.g., Random Forest, XGBoost) with unique hyperparameters.
+Logging metrics/artifacts: Records parameters, performance metrics, and notebooks for each trial in MLflow.
+Selecting the best model: Ranks trials based on the primary metric (e.g., accuracy, RMSE).
+Example output:
+from databricks import automl
+summary = automl.classify(df, target_col="label")
+display(summary.trials)  # Shows all trials with metrics
+Key Features:
+No manual intervention: Handles feature engineering, splitting, and tuning.
+Reproducibility: Saves code for each trial as notebooks.
+Why Other Options Are Incorrect?
+"Manual data preparation":
+AutoML automates this (e.g., missing value imputation, encoding).
+"Summary statistics only":
+Records full trial details, not just summaries.
+"Single trial":
+AutoML runs dozens of trials to find the best model.
+Key Takeaway:
+AutoML provides a leaderboard of trials for model comparison. Use the best model or customize generated notebooks.
+Pro Tip: For large datasets, set timeout_minutes to limit runtime.
+ドメイン
+AutoML
+
+問題3-50
+What is the advantage of using Bayesian approaches, such as the Hyperopt Tree of Parzen Estimators (TPE) algorithm, over grid search and random search in hyperparameter tuning?
+Bayesian approaches are faster but less accurate
+Bayesian approaches explore fewer hyperparameters
+正解
+Bayesian approaches are generally more efficient, allowing exploration of more hyperparameters and larger ranges
+Bayesian approaches are suitable only for small datasets
+全体的な説明
+Correct Answer:
+Bayesian approaches are generally more efficient, allowing exploration of more hyperparameters and larger ranges.
+Explanation:
+Why This Is Correct?
+Bayesian optimization (e.g., Hyperopt’s TPE) adapts its search based on past trial results:
+Focuses on promising regions: Allocates more trials to hyperparameters that improve performance.
+Avoids wasted effort: Skips poorly performing combinations (unlike grid/random search).
+Efficiency:
+Explores wider ranges with fewer trials.
+Ideal for high-dimensional spaces (e.g., neural networks).
+Example:
+from hyperopt import fmin, tpe, hp
+best = fmin(fn=objective, space=hp.uniform('lr', 0.001, 0.1), algo=tpe.suggest, max_evals=50)
+Key Advantages Over Grid/Random Search:
+MethodProsConsGrid SearchExhaustiveComputationally expensiveRandom SearchBetter than grid for high dimensionsNo learning from past trialsBayesian (TPE)Smart sampling, faster convergenceRequires sequential trials
+Why Other Options Are Incorrect?
+"Faster but less accurate":
+Bayesian methods are both faster and more accurate due to adaptive sampling.
+"Explore fewer hyperparameters":
+They explore more efficiently, not fewer.
+"Only for small datasets":
+Works at scale (e.g., with SparkTrials).
+Key Takeaway:
+For hyperparameter tuning:
+Use Bayesian (TPE) when efficiency matters (large spaces, costly evaluations).
+Use random search as a baseline for simple problems.
+Avoid grid search except for low-dimensional spaces.
+Pro Tip: Pair TPE with early stopping (e.g., max_evals=100) for optimal results.
+ドメイン
+Hyperopt and SparkTrials
+
+問題3-51
+A Data Scientist is using a feature store. In one of the feature tables she wants to replace missing values with each respective feature variable's median value.
+A colleague suggests that the data scientist is throwing away valuable information by doing this. Which of the following approaches can they take to include as much information as possible in the feature set?
+Choose only ONE best answer.
+正解
+Create a binary feature variable for each feature that contains missing values indicating where each row's value has been imputed.
+Refrain from imputing the missing values in favor of letting the machine learning algorithm determine how to handle them.
+Create a constant feature variable for each feature that contains missing values indicating the percentage of row from the feature that was originally missing.
+Impute the missing values using each respective feature variable's mean value instead of the median value.
+Remove all feature variables that originally contained missing values from the feature set.
+全体的な説明
+Correct Answer:
+Create a binary feature variable for each feature that contains missing values indicating where each row's value has been imputed.
+Explanation:
+Why This Is Correct?
+Binary indicator variables preserve information about which values were missing (often meaningful patterns exist in missingness).
+Example Workflow:
+Impute missing values with the median.
+Add a binary column (e.g., age_was_missing) marking imputed rows.
+from pyspark.sql.functions import col, when, lit
+median_age = df.approxQuantile("age", [0.5], 0.01)[0]  # Compute median
+df = df.withColumn("age_imputed", when(col("age").isNull(), median_age).otherwise(col("age")))
+df = df.withColumn("age_was_missing", when(col("age").isNull(), 1).otherwise(0))
+Advantage: The model learns from both the imputed value and the missingness pattern.
+Key Benefit:
+Maximizes information retention while handling missing data robustly.
+Why Other Options Are Incorrect?
+"Refrain from imputing":
+Most ML algorithms cannot handle nulls (e.g., Spark ML throws errors).
+"Constant feature for % missing":
+Less actionable than per-row indicators (global stats don’t help row-level predictions).
+"Impute with mean":
+Similar to median but doesn’t address the core issue (losing missingness info).
+"Remove features":
+Discards potentially useful data.
+Key Takeaway:
+For missing data in feature stores:
+Impute (median/mean) + add binary flags.
+Use FeatureStoreClient.log_feature_stats() to track missingness.
+Pro Tip: For time-series features, consider forward-fill imputation + flags.
+ドメイン
+Databricks ML
+
+問題3-52
+How to Reduce Overfitting?
+Choose only ONE best answer.
+Early Stopping of epochs– form of regularization while training a model with an
+iterative method, such as gradient descent
+Data Augmentation (increase the amount of training data using information only in
+our training data); Eg - Image scaling, rotation to find dog in image
+Regularization – technique to reduce the complexity of the model
+Dropout is a regularization technique that prevents overfitting
+正解
+All of the above
+全体的な説明
+Correct Answer:
+All of the above
+Explanation:
+Why This Is Correct?
+All listed techniques are proven methods to reduce overfitting, each addressing it from a different angle:
+Early Stopping: Halts training when validation performance degrades (prevents memorization).
+Data Augmentation: Expands training data diversity (e.g., image rotations for CNNs).
+Regularization: Penalizes model complexity (e.g., L1/L2 in linear models, dropout in neural networks).
+Dropout: Randomly deactivates neurons during training to force robust feature learning.
+Examples:
+Early Stopping (TensorFlow/Keras):
+from tensorflow.keras.callbacks import EarlyStopping
+early_stop = EarlyStopping(monitor='val_loss', patience=3)
+model.fit(X_train, y_train, validation_data=(X_val, y_val), callbacks=[early_stop])
+Dropout (PyTorch):
+import torch.nn as nn
+model = nn.Sequential(
+    nn.Linear(100, 50),
+    nn.Dropout(0.2),  # 20% dropout
+    nn.ReLU()
+)
+Key Takeaway:
+To combat overfitting:
+Use a combination of these techniques.
+Monitor validation metrics closely.
+Regularization choice depends on the model (e.g., dropout for neural nets, L2 for linear models).
+Pro Tip: For tabular data, ensemble methods (e.g., Random Forests) naturally resist overfitting via averaging.
+ドメイン
+ML Workflows
+
+問題3-53
+What is the primary goal of using dimensionality reduction techniques in Spark ML workflows?
+To increase model complexity
+To add irrelevant features to the dataset
+正解
+To reduce the number of input features
+To speed up data preprocessing
+全体的な説明
+Correct Answer:
+To reduce the number of input features
+Explanation:
+Why This Is Correct?
+Dimensionality reduction (e.g., PCA, Feature Selection) in Spark ML aims to:
+Eliminate redundant/irrelevant features: Focus on the most informative ones.
+Reduce computational cost: Fewer features speed up training and inference.
+Improve model performance: Mitigates the "curse of dimensionality" (noise from irrelevant features).
+Example (PCA in Spark ML):
+from pyspark.ml.feature import PCA
+pca = PCA(k=10, inputCol="features", outputCol="pca_features")
+model = pca.fit(scaled_df)  # Reduces 100D features → 10D
+Key Benefits:
+Faster training: Less data to process.
+Better generalization: Removes noise.
+Why Other Options Are Incorrect?
+"Increase model complexity":
+Dimensionality reduction simplifies models.
+"Add irrelevant features":
+Counterproductive—reduction removes irrelevance.
+"Speed up preprocessing":
+A side effect, not the primary goal.
+Key Takeaway:
+For efficient Spark ML workflows:
+Use PCA for linear dependencies.
+Use ChiSqSelector for categorical features.
+Validate with cross-validation to choose optimal dimensions.
+Pro Tip: Pair with VectorSlicer to manually drop low-importance features.
+ドメイン
+Spark ML Basics
+
+問題3-54
+In Databricks, a data engineer needs to schedule a notebook to run daily and pass the current date as a parameter. Which feature should they use and how should they pass the parameter?
+Use Databricks Jobs with %run command and pass the date using dbutils.widgets.get("date")
+Schedule the notebook in Azure Data Factory and pass the date as a pipeline parameter
+正解
+Use Databricks Jobs and specify the date parameter in the job configuration
+Schedule the notebook with Cron jobs and use Scala to get the current date
+Implement an Apache Airflow DAG to schedule the notebook and pass the date through Airflow macros
+全体的な説明
+Correct Answer:
+Use Databricks Jobs and specify the date parameter in the job configuration
+Explanation:
+Why This Is Correct?
+Databricks Jobs natively support parameterized notebook execution. The steps are:
+Define a widget in the notebook to accept the date:
+python
+Copy
+dbutils.widgets.text("date", "")  # Create a text input widget
+current_date = dbutils.widgets.get("date")  # Read the parameter
+Schedule the job:
+In the Job UI, add a parameter date with a value like {{ yyyy-MM-dd }} (dynamic timestamp).
+Set the schedule to daily.
+Benefits:
+No external dependencies (e.g., Airflow/ADF).
+Built-in parameterization with dynamic values.
+Example Job Configuration:
+Notebook path: /Users/email@company/daily_etl
+Parameters: {"date": "{{ yyyy-MM-dd }}"
+Schedule: 0 0 0 * * ? (daily at midnight).
+Why Other Options Are Less Ideal?
+%run with widgets:
+Manual and error-prone; not scalable for scheduling.
+Azure Data Factory/Airflow:
+Overkill for simple daily jobs; adds external complexity.
+Cron jobs:
+Lacks native integration with Databricks parameter passing.
+Key Takeaway:
+For scheduled parameterized notebooks in Databricks:
+Use Jobs + widgets for simplicity.
+Leverage {{ yyyy-MM-dd }} for dynamic dates.
+Monitor via Job Runs UI.
+Pro Tip: For complex dependencies, use Delta Live Tables instead.
+ドメイン
+Spark ML Basics
+
+問題3-55
+In which of the following cases is mean imputation most appropriate for handling missing values?
+Choose only ONE best answer.
+When the data is missing at random
+When the data is missing not at random
+正解
+When the data is missing completely at random
+When the data is missing systematically
+全体的な説明
+Correct Answer:
+When the data is missing completely at random
+Explanation:
+Why This Is Correct?
+Mean imputation replaces missing values with the feature’s mean, which is least biased when data is Missing Completely at Random (MCAR), meaning:
+The missingness has no relationship to any observed or unobserved variables.
+Example: Sensor data gaps due to random power outages.
+Appropriate Use Case:
+from pyspark.ml.feature import Imputer
+imputer = Imputer(strategy="mean", inputCols=["age"], outputCols=["age_imputed"])
+imputer.fit(df).transform(df)
+Key Assumption:
+MCAR ensures the mean remains representative of the true distribution.
+Why Other Options Are Incorrect?
+Missing at Random (MAR):
+Use model-based imputation (e.g., regression), as missingness depends on observed data.
+Missing Not at Random (MNAR)/Systematic:
+Mean imputation introduces bias (e.g., if high-income values are missing intentionally).
+Key Takeaway:
+For missing data handling:
+MCAR: Mean/median imputation.
+MAR: Predictive imputation (e.g., IterativeImputer).
+MNAR: Analyze root cause (e.g., add missingness indicators).
+Pro Tip: Always compare distributions pre/post-imputation to check for bias.
+ドメイン
+ML Workflows
+
+問題3-56
+A team of machine learning engineers receives three notebooks (Notebook A, Notebook B, and Notebook C) from a data scientist to set up a machine learning pipeline. Notebook A is employed for exploratory data analysis, while Notebooks Band Care used for feature engineering. For the successful execution of Notebooks B and C, Notebook A must be completed first. However, Notebooks B and C operate independently of each other. Given this setup,
+what would be the most efficient and reliable method for the engineering team to orchestrate this pipeline utilizing Databricks?
+Choose only ONE best answer.
+The team could configure a three-task job where each task runs a specific notebook, with each task depending on the completion of the previous one.
+They could establish a three-task job where each task operates a distinct notebook, and all three tasks are executed in parallel.
+They could create three single-task jobs, with each job running a unique notebook, all scheduled to run concurrently.
+正解
+The team could arrange a three-task job where each task operates a specific notebook. The last two tasks are set to run simultaneously, each relying on the completion of the first task
+全体的な説明
+Correct Answer:
+The team could arrange a three-task job where each task operates a specific notebook. The last two tasks are set to run simultaneously, each relying on the completion of the first task.
+Explanation:
+Why This Is Correct?
+Dependencies: Notebooks B and C depend on Notebook A but run independently of each other.
+Optimal Setup:
+Task 1: Runs Notebook A (EDA).
+Tasks 2 & 3: Run Notebooks B and C in parallel after Task 1 succeeds.
+Databricks Jobs Configuration:
+Set Task 1 as a dependency for Tasks 2 and 3.
+No dependency between Tasks 2 and 3.
+Efficiency: Parallel execution of B and C saves time.
+Example Job Setup:
+# Pseudocode for Databricks Jobs UI
+Job:
+  - Task 1: Notebook A (EDA)
+  - Task 2: Notebook B (Feature Engineering) → Depends on Task 1
+  - Task 3: Notebook C (Feature Engineering) → Depends on Task 1
+Why Other Options Are Incorrect?
+"All tasks sequential":
+Inefficient (no parallelism between B and C).
+"All tasks parallel":
+Risks B/C running before A finishes.
+"Three separate jobs":
+Lacks explicit dependency management; harder to monitor.
+Key Takeaway:
+For efficient pipeline orchestration in Databricks:
+Use multi-task jobs with dependencies.
+Parallelize independent tasks (B/C) where possible.
+Monitor via Jobs UI for execution status.
+Pro Tip: Add alerting to notify if Task 1 fails (blocks B/C).
+ドメイン
+Databricks ML
+
+問題3-57
+In a distributed computing environment, a data engineer implements a streaming data pipeline using Apache Spark Structured Streaming. The pipeline includes a stateful operation that tracks the running count of events by key.
+Which configuration ensures optimal performance and fault tolerance for this stateful operation?
+正解
+Configuring checkpointing to HDFS to ensure fault tolerance.
+Increasing the number of shuffle partitions to maximize parallelism.
+Using a stateful operation that stores state in local memory for faster access.
+Disabling write-ahead logs to increase the throughput of the streaming application.
+Broadcasting join tables to all executors to reduce shuffle during state updates.
+全体的な説明
+Correct Answer:
+Configuring checkpointing to HDFS to ensure fault tolerance.
+Explanation:
+Why This Is Correct?
+Checkpointing in Spark Structured Streaming is critical for stateful operations (e.g., mapGroupsWithState, flatMapGroupsWithState) because:
+Fault Tolerance: Saves state and metadata to HDFS/S3 (recoverable after failures).
+Exactly-once semantics: Ensures accurate state restoration.
+Example:
+query = (
+    df.writeStream
+    .format("delta")
+    .outputMode("update")
+    .option("checkpointLocation", "/path/to/checkpoint")  # Required for stateful ops
+    .start()
+)
+Key Benefits:
+State Recovery: Restores counts after crashes.
+Performance: Offloads state storage from memory to durable storage.
+Why Other Options Are Incorrect?
+"Increasing shuffle partitions":
+Helps parallelism but doesn’t address state recovery.
+"Local memory state":
+Volatile; lost on executor failures.
+"Disabling write-ahead logs":
+Risky—loses fault tolerance (WALs log state changes).
+"Broadcasting join tables":
+Irrelevant for stateful streaming (state is per-key, not joined).
+Key Takeaway:
+For stateful streaming pipelines:
+Enable checkpointing to HDFS/S3.
+Tune spark.sql.shuffle.partitions for parallelism.
+Monitor state store metrics (e.g., numUpdatedStateRows).
+Pro Tip: Use Delta Lake for checkpointing to leverage ACID guarantees.
+ドメイン
+Spark ML
+
+問題3-58
+Which of the following options in Pandas API on Spark sets the limit for a shortcut and computes a specified number of rows using its schema?
+display.max_rows
+compute.ops_on_diff_frames
+正解
+compute.shortcut_limit
+compute.default_index_type
+全体的な説明
+Correct Answer:
+compute.shortcut_limit
+Explanation:
+Why This Is Correct?
+compute.shortcut_limit in pandas API on Spark determines how many rows are computed locally (on the driver) to infer schema or perform quick checks, avoiding full distributed computation.
+Default: Typically 1000 rows.
+Use Case: Speeds up operations like df.head() or schema inference by sampling.
+Example:
+import pyspark.pandas as ps
+ps.set_option("compute.shortcut_limit", 500)  # Only compute 500 rows for schema checks
+Key Impact:
+Performance: Reduces latency for metadata operations.
+Trade-off: Too low → schema inference errors; too high → slower driver ops.
+Why Other Options Are Incorrect?
+display.max_rows:
+Controls how many rows print/show (e.g., df.display()).
+compute.ops_on_diff_frames:
+Allows operations between unrelated DataFrames (unrelated to sampling).
+compute.default_index_type:
+Sets index type (e.g., "distributed" vs. "sequence").
+Key Takeaway:
+For efficient schema checks in pandas-on-Spark:
+Adjust compute.shortcut_limit based on data size.
+Use df.spark.schema() for full schema without sampling.
+Pro Tip: Increase this value if you encounter schema mismatches in large DataFrames.
+
+問題3-59
+What method allows PySpark users to access the full PySpark APIs when working with pandas-on-Spark?
+DataFrame.to_pandas()
+正解
+DataFrame.to_spark()
+ps.to_spark()
+ps.pandas_api()
+全体的な説明
+Correct Answer:
+DataFrame.to_spark()
+Explanation:
+Why This Is Correct?
+The to_spark() method converts a pandas-on-Spark DataFrame back to a native PySpark DataFrame, enabling access to full PySpark APIs (e.g., RDD operations, Spark SQL).
+Example:
+import pyspark.pandas as ps
+ps_df = ps.DataFrame({"A": [1, 2], "B": [3, 4]})
+spark_df = ps_df.to_spark()  # Converts to PySpark DataFrame
+spark_df.rdd.map(...)        # Now you can use PySpark APIs
+Key Use Cases:
+Advanced transformations: Use PySpark’s lower-level APIs (e.g., rdd, join).
+Integration: Compatible with Spark MLlib, Structured Streaming, etc.
+Why Other Options Are Incorrect?
+to_pandas():
+Converts to a pandas DataFrame (single-node, loses Spark parallelism).
+ps.to_spark():
+Doesn’t exist—correct syntax is DataFrame.to_spark().
+ps.pandas_api():
+Doesn’t exist; pandas-on-Spark APIs are accessed directly via ps.
+Key Takeaway:
+For seamless transitions between pandas-on-Spark and PySpark:
+Use to_spark() for PySpark’s full capabilities.
+Use to_pandas() only for small, local analysis.
+Pro Tip: Chain operations efficiently:
+ps_df = ps.DataFrame(...).to_spark().groupBy(...).count().to_pandas_on_spark()
+
+問題3-60
+You are building a recommendation system in a machine learning project and need collaborative filtering techniques. Which algorithm, supported by Databricks MLlib, is suitable for collaborative filtering tasks?
+Decision Trees
+k-Means Clustering
+正解
+Matrix Factorization
+Naive Bayes
+全体的な説明
+Correct Answer:
+Matrix Factorization
+Explanation:
+Why This Is Correct?
+Matrix Factorization (e.g., ALS - Alternating Least Squares) is the standard algorithm for collaborative filtering in Spark MLlib. It:
+Decomposes the user-item interaction matrix into latent factors (user and item embeddings).
+Predicts missing entries (e.g., ratings) via dot products of these factors.
+Example:
+from pyspark.ml.recommendation import ALS
+als = ALS(
+    userCol="user_id",
+    itemCol="item_id",
+    ratingCol="rating",
+    coldStartStrategy="drop"
+)
+model = als.fit(train_df)
+Key Features:
+Implicit/Explicit Feedback: Supports both (via implicitPrefs=True).
+Scalability: Optimized for distributed computation.
+Why Other Options Are Incorrect?
+Decision Trees/Naive Bayes:
+Not designed for user-item interaction modeling.
+k-Means:
+A clustering algorithm (unsupervised), not for personalized recommendations.
+Key Takeaway:
+For collaborative filtering in Spark MLlib:
+Use ALS for matrix factorization.
+Tune rank (latent factors), regParam (regularization).
+Deploy with MLflow for serving.
+Pro Tip: For cold-start issues, blend with content-based filtering.
+
+問題3-61
+A data engineering team is tasked with reading data from an external database and writing it to a Databricks Delta table named "external_data." They want to ensure that any existing data in the Delta table is not overwritten.
+Which code snippet should they use?
+external_data.write.format("delta").mode("overwrite").saveAsTable("external_data")
+正解
+external_data.write.format("delta").mode("append").saveAsTable("external_data")
+external_data.write.format("delta").mode("ignore").saveAsTable("external_data")
+spark.sql("INSERT INTO external_data SELECT * FROM external_data_source")
+全体的な説明
+Correct Answer:
+external_data.write.format("delta").mode("append").saveAsTable("external_data")
+Explanation:
+Why This Is Correct?
+mode("append") ensures new data is added to the existing Delta table without deleting prior records.
+Idempotent: Safe for reruns (no duplicates if data is unique).
+Example:
+(external_data.write
+    .format("delta")
+    .mode("append")  # Key parameter
+    .saveAsTable("external_data")
+)
+Key Benefits:
+Preserves history: Delta Lake’s time travel retains all versions.
+ACID compliance: Guarantees data integrity.
+Why Other Options Are Incorrect?
+overwrite:
+Deletes existing data (violates the requirement).
+ignore:
+Skips writing if the table exists (no data is added).
+SQL INSERT INTO:
+Works but is less explicit than append for batch writes.
+Key Takeaway:
+For incremental writes to Delta Lake:
+Use append to preserve existing data.
+For deduplication, add MERGE logic.
+Pro Tip: Use OPTIMIZE and ZORDER to maintain query performance on growing tables.
+
+問題3-62
+Your machine learning project involves handling time series data for forecasting tasks. Which algorithm, supported by Databricks MLlib, is suitable for time series forecasting?
+Linear Regression
+Decision Trees
+正解
+Long Short-Term Memory (LSTM)
+Support Vector Machines
+全体的な説明
+Correct Answer:
+Long Short-Term Memory (LSTM)
+Explanation:
+Why This Is Correct?
+LSTM (a type of recurrent neural network) is ideal for time series forecasting because:
+Captures temporal dependencies: Remembers long-term patterns in sequential data.
+Handles variable-length sequences: Adapts to irregular time steps.
+Supported in Databricks via TensorFlow/PyTorch integrations:
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+model = Sequential([LSTM(50, input_shape=(n_steps, n_features)), Dense(1)])
+Spark MLlib Alternative: Use ARIMA or Prophet for classical approaches.
+Key Features:
+Sequential Modeling: Processes time steps iteratively.
+Non-linear Patterns: Learns complex trends/seasonality.
+Why Other Options Are Incorrect?
+Linear Regression/Decision Trees/SVM:
+Ignore temporal order; treat time series as independent points.
+Key Takeaway:
+For time series forecasting in Databricks:
+Use LSTM for deep learning (GPU-accelerated).
+For tabular time series, try mlflow.prophet or Spark ML’s ARIMA.
+Pro Tip: Preprocess with lag features (pyspark.sql.window) to boost LSTM performance.
+
+問題3-63
+A machine learning team is working on a project that requires using a custom PyTorch model in their Databricks ML pipeline. They want to ensure that the PyTorch library and the custom model are available for training across all notebooks in the workspace.
+What is the recommended approach?
+Edit the cluster to use the Databricks Runtime for MLflow.
+Set the MLFLOW_PYTORCH_VERSION variable in the cluster configuration.
+Run %pip install torch once on any notebook attached to the cluster.
+正解
+Add torch and the custom model to the cluster’s library dependencies.
+全体的な説明
+Correct Answer:
+Add torch and the custom model to the cluster’s library dependencies.
+Explanation:
+Why This Is Correct?
+Cluster libraries ensure all notebooks on the cluster have access to the same PyTorch version and custom model code. Steps:
+Install PyTorch:
+Navigate to Cluster → Libraries → Install New → PyPI → Enter torch.
+Upload custom model:
+Add the model code as a whl/egg file or Git repo.
+Benefits:
+Consistency: All users get the same environment.
+Reproducibility: Libraries persist across sessions.
+Example Workflow:
+# After adding torch to cluster libs, use in any notebook:
+import torch
+from custom_model import MyModel  # Uploaded as a library
+model = MyModel()
+Why Other Options Are Less Ideal?
+Databricks Runtime for MLflow:
+Includes MLflow but doesn’t guarantee PyTorch availability.
+MLFLOW_PYTORCH_VERSION:
+Not a valid config; MLflow tracks versions but doesn’t install them.
+%pip install torch:
+Temporary; must be rerun per notebook/cluster restart.
+Key Takeaway:
+For team-wide PyTorch projects:
+Cluster libraries for core dependencies (PyTorch).
+Init scripts for custom code/scripts.
+MLflow for model tracking.
+Pro Tip: Use cluster-scoped init scripts to automate custom model setup.
+
+問題3-64
+A machine learning team is working on a project that requires a specific version of the numpy library. They want to ensure that this version is used across all notebooks in their Databricks workspace.
+What is the recommended approach?
+Edit the cluster to use the Databricks Runtime for Machine Learning.
+Set the PYTHON_VERSION variable in the cluster configuration to the required version.
+Run %pip install numpy==<desired_version> once on any notebook attached to the cluster.
+正解
+Add numpy==<desired_version> to the cluster’s library dependencies.
+There is no way to enforce a specific version of numpy on a cluster.
+全体的な説明
+Correct Answer:
+Add numpy==<desired_version> to the cluster’s library dependencies.
+Explanation:
+Why This Is Correct?
+Cluster libraries ensure the specified numpy version is consistently available across all notebooks attached to the cluster. Steps:
+Navigate to Cluster → Libraries → Install New → PyPI.
+Enter numpy==<desired_version> (e.g., numpy==1.21.0).
+Benefits:
+Reproducibility: All users get the same numpy version.
+Persistence: Survives cluster restarts.
+Example:
+# After adding to cluster libs, use in any notebook:
+import numpy as np
+print(np.__version__)  # Guaranteed to be the specified version
+Why Other Options Are Incorrect?
+Databricks Runtime for ML:
+Includes numpy but doesn’t guarantee version control.
+PYTHON_VERSION:
+Sets Python version, not library versions.
+%pip install in a notebook:
+Temporary; must be rerun per session.
+"No way to enforce":
+False—cluster libraries enforce versions.
+Key Takeaway:
+For team-wide dependency management:
+Use cluster libraries for core packages (numpy, pandas).
+For ad-hoc needs, supplement with %pip install (but document in shared notebooks).
+Pro Tip: Combine with init scripts for complex env setups
+
+問題3-65
+You are working with a large dataset, and you want to improve the efficiency of filtering by Column.isin(list). Which option should you consider adjusting?
+compute.default_index_type
+正解
+compute.isin_limit
+compute.ordered_head
+comput.default_index_cache
+全体的な説明
+Correct Answer:
+compute.isin_limit
+✅ Explanation:
+In pandas-on-Spark (pyspark.pandas), the isin() function is used to filter a DataFrame based on whether a column's values exist in a given list. By default, pandas-on-Spark optimizes this operation using a broadcast join, but if the list is too large, performance can degrade.
+The compute.isin_limit option controls the threshold for when isin() should switch from a broadcast join to a standard join in large datasets.
+If compute.isin_limit is too low → Spark may default to a standard join, which is slower for small lists.
+If compute.isin_limit is too high → The broadcast join may fail, increasing computation time.
+By adjusting compute.isin_limit, you can optimize the performance of Column.isin(list) filtering.
+Example: Adjusting compute.isin_limit for Large Lists
+import pyspark.pandas as ps
+# Adjust the threshold for isin() optimization
+ps.set_option("compute.isin_limit", 5000)
+# Sample pandas-on-Spark DataFrame
+df = ps.DataFrame({"id": range(1, 100000)})
+# Large list to filter
+large_list = list(range(1, 6000))
+# Optimized filtering
+filtered_df = df[df["id"].isin(large_list)]
+Setting compute.isin_limit = 5000 ensures efficient filtering when the list contains up to 5000 elements.
+If the list exceeds the limit, Spark automatically switches to a more scalable join-based approach.
+❌ Why Other Options Are Incorrect:
+compute.default_index_type
+❌ Incorrect:
+Controls the indexing mechanism (e.g., distributed index vs. sequence index), not filtering performance.
+Example:
+ps.set_option("compute.default_index_type", "distributed")
+Does not impact isin() performance.
+compute.ordered_head
+❌ Incorrect:
+Affects the ordering of head() operations, ensuring ordered results for previewing DataFrames.
+Not related to isin() filtering.
+compute.default_index_cache
+❌ Incorrect:
+Controls whether pandas-on-Spark caches index columns for performance improvement in index-based operations, not filtering.
+Not relevant to Column.isin(list) optimizations.
+✅ Final Takeaway:
+To improve Column.isin(list) filtering efficiency, adjust:
+ps.set_option("compute.isin_limit", <new_threshold>)
+This optimizes performance by controlling when Spark switches from broadcast joins to standard joins for large lists.
+ドメイン
+Pandas API on Spark
